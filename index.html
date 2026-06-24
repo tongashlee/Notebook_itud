@@ -78,7 +78,7 @@
     <div class="topbar d-flex justify-content-between align-items-center d-print-none">
       <div class="d-flex align-items-center">
         <button class="btn d-md-none border fs-5 text-muted me-3" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-        <h6 class="m-0 fw-bold text-dark-blue"><i class="fa-solid fa-bolt text-orange me-2"></i> ซิงค์ข้อมูลอัตโนมัติแบบเรียลไทม์</h6>
+        <h6 class="m-0 fw-bold text-dark-blue"><i class="fa-solid fa-bolt text-orange me-2"></i> ข้อมูลเชื่อมต่อกับ Supabase Database</h6>
       </div>
       <div class="d-flex align-items-center gap-2">
          <label class="small fw-bold text-muted mb-0"><i class="fa-regular fa-calendar-check text-orange"></i> เลือกเดือน:</label>
@@ -453,14 +453,25 @@
   </div>
 
   <script>
-    // **ส่วนที่ต้องตั้งค่าสำหรับ Supabase**
-    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ==========================================
+    // ตั้งค่าเชื่อมต่อ Supabase Database
+    // ==========================================
+    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co'; // ใส่ URL ของคุณ
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4'; // ใส่ Anon Key ของคุณ
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let globalProducts = [], globalSales = [], globalTransactions = [];
     let mySalesChart = null;
     let myProfitChart = null;
+
+    // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY
+    function formatDateToTH(dateString) {
+      if(!dateString) return "";
+      if(dateString.includes('/')) return dateString;
+      let parts = dateString.split('-');
+      if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return dateString;
+    }
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
 
@@ -474,7 +485,6 @@
       if(window.innerWidth <= 768) toggleSidebar();
     }
 
-    // แก้ไขให้ดึงข้อมูลจาก Supabase แทน google.script.run
     async function refreshAllData() {
       let mFilter = document.getElementById('monthFilter').value;
       if (!mFilter) {
@@ -484,10 +494,11 @@
       }
       
       try {
+        // ดึงข้อมูลทั้งหมดจาก Supabase พร้อมกัน
         const [prodRes, salesRes, txRes] = await Promise.all([
-          supabase.from('products').select('*'),
-          supabase.from('sales').select('*'),
-          supabase.from('transactions').select('*')
+          supabaseClient.from('products').select('*'),
+          supabaseClient.from('sales').select('*'),
+          supabaseClient.from('transactions').select('*')
         ]);
 
         if (prodRes.error) throw prodRes.error;
@@ -505,8 +516,8 @@
         renderReportsTab();
         renderTransactionsTable();
       } catch (error) {
-        console.error("Supabase Fetch Error:", error);
-        // แสดงแค่ใน Console ก่อน ไม่กวนผู้ใช้ หากยังไม่ได้เชื่อมต่อ DB
+        console.error("Error fetching data:", error);
+        Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Supabase', 'error');
       }
     }
 
@@ -525,7 +536,7 @@
       let dailyProfit = {};
 
       function getBrandByPid(pid) {
-         let prod = globalProducts.find(p => p.id == pid);
+         let prod = globalProducts.find(p => p.id === pid);
          return prod ? prod.brand : 'ไม่ระบุ';
       }
 
@@ -540,8 +551,10 @@
       });
 
       let count = 0;
-      globalSales.forEach(s => {
-        if(!s.date) return;
+      // เรียงจากใหม่ไปเก่า
+      let sortedSales = [...globalSales].sort((a, b) => b.receiptId.localeCompare(a.receiptId));
+
+      sortedSales.forEach(s => {
         let dParts = s.date.split('/');
         let sDay = dParts[0];
         let sMonth = dParts[1] + "/" + dParts[2];
@@ -587,9 +600,7 @@
       document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">ไม่มีรายการขายในเดือนนี้</td></tr>';
       
       if (lowStockCount > 0) {
-         if (lowStockCount === 10) {
-            lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
-         }
+         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
          document.getElementById('dashLowStock').innerHTML = lowStockHtml;
       } else {
          document.getElementById('dashLowStock').innerHTML = '<tr><td colspan="2" class="text-success text-center">สินค้าเพียงพอทุกรายการ</td></tr>';
@@ -599,7 +610,7 @@
     }
 
     function renderCharts(year, month, dailySales, dailyProfit) {
-      let daysInMonth = new Date(year, month, 0).getDate(); 
+      let daysInMonth = new Date(year, month, 0).getDate();
       let labels = [];
       let salesData = [];
       let profitData = [];
@@ -621,51 +632,28 @@
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{
-            label: 'ยอดขาย (บาท)',
-            data: salesData,
-            backgroundColor: 'rgba(249, 115, 22, 0.8)',
-            borderRadius: 4
-          }]
+          datasets: [{ label: 'ยอดขาย (บาท)', data: salesData, backgroundColor: 'rgba(249, 115, 22, 0.8)', borderRadius: 4 }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
 
       myProfitChart = new Chart(ctxProfit, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{
-            label: 'กำไร (บาท)',
-            data: profitData,
-            backgroundColor: 'rgba(34, 197, 94, 0.2)',
-            borderColor: 'rgba(34, 197, 94, 1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3
-          }]
+          datasets: [{ label: 'กำไร (บาท)', data: profitData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
     }
 
     function renderViewProducts() {
-      let html = globalProducts.map(p => `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${Number(p.actualPrice).toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger':'text-dark'}">${p.stock}</span> เครื่อง</td></tr>`).join('');
+      let html = globalProducts.map(p => `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger':'text-dark'}">${p.stock}</span> เครื่อง</td></tr>`).join('');
       document.getElementById('viewData').innerHTML = html || '<tr><td colspan="5" class="text-muted">ไม่มีรายการสินค้าในระบบ</td></tr>';
     }
 
     function renderManageProducts() {
-      let html = globalProducts.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${Number(p.cost).toLocaleString()}</td><td class="text-success">฿${Number(p.actualPrice).toLocaleString()}</td><td>${p.stock}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.date || ''}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock})"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('');
+      let html = globalProducts.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td>${p.stock}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock})"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('');
       document.getElementById('productData').innerHTML = html || '<tr><td colspan="6" class="text-muted">ไม่มีสินค้า</td></tr>';
     }
 
@@ -698,7 +686,7 @@
       let b = document.getElementById('filterBrand').value.toLowerCase();
       let s = document.getElementById('filterModel').value.toLowerCase();
       let filtered = globalProducts.filter(p => (b === "" || p.brand.toLowerCase() === b) && (s === "" || p.name.toLowerCase().includes(s)));
-      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${Number(p.actualPrice).toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger':'bg-success'}">${p.stock}</span></td></tr>`).join('');
+      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger':'bg-success'}">${p.stock}</span></td></tr>`).join('');
     }
 
     function calcVAT() {
@@ -711,54 +699,61 @@
       document.getElementById('saleGrandTotal').value = (sub + vat).toFixed(2);
     }
 
-    // บันทึกขายลง Supabase
     async function submitSale(e) {
       e.preventDefault();
-      let prodId = document.getElementById('saleProduct').value;
-      if(!prodId) { Swal.fire('เตือน', 'กรุณาเลือกสินค้าก่อนบันทึกขาย', 'warning'); return; }
+      
+      let pId = document.getElementById('saleProduct').value;
+      if(!pId) { Swal.fire('เตือน', 'กรุณาเลือกสินค้าก่อนบันทึกขาย', 'warning'); return; }
+      
+      let qty = Number(document.getElementById('saleQty').value);
+      let product = globalProducts.find(p => p.id === pId);
+      
+      if(qty > product.stock) { Swal.fire('เตือน', 'สินค้าคงเหลือไม่พอขาย!', 'warning'); return; }
 
-      let prod = globalProducts.find(p => p.id == prodId);
-      let qty = parseInt(document.getElementById('saleQty').value);
-      if(prod.stock < qty) { Swal.fire('เตือน', 'สต็อกสินค้าไม่เพียงพอ', 'warning'); return; }
-
-      let customPrice = parseFloat(document.getElementById('saleCustomPrice').value);
+      let customPrice = Number(document.getElementById('saleCustomPrice').value);
       let subTotal = customPrice * qty;
-      let totalCost = prod.cost * qty;
+      let totalCost = product.cost * qty;
       let profit = subTotal - totalCost;
-      let totalSales = parseFloat(document.getElementById('saleGrandTotal').value);
+      let vat = subTotal * 0.07;
+      let totalSales = subTotal + vat;
 
-      let dRaw = document.getElementById('saleDate').value.split('-');
-      let formattedDate = `${dRaw[2]}/${dRaw[1]}/${dRaw[0]}`;
-
-      let data = {
-        receiptId: 'INV' + Date.now().toString().slice(-6),
-        date: formattedDate,
-        productId: prodId,
-        productName: prod.name,
+      let receiptId = "INV-" + Date.now();
+      
+      let saleData = {
+        receiptId: receiptId,
+        date: formatDateToTH(document.getElementById('saleDate').value),
+        productId: pId,
+        productName: product.name,
         customPrice: customPrice,
         qty: qty,
-        totalSales: totalSales,
         subTotal: subTotal,
+        totalSales: totalSales,
         totalCost: totalCost,
         profit: profit,
-        cusName: document.getElementById('saleCusName').value || '-',
-        address: document.getElementById('saleAddress').value || '-'
+        cusName: document.getElementById('saleCusName').value || "-",
+        address: document.getElementById('saleAddress').value || "-"
       };
-      
+
       Swal.showLoading();
+      
       try {
-        const { error: saleErr } = await supabase.from('sales').insert(data);
+        // 1. บันทึกการขาย
+        const { error: saleErr } = await supabaseClient.from('sales').insert([saleData]);
         if(saleErr) throw saleErr;
 
-        const { error: stockErr } = await supabase.from('products').update({ stock: prod.stock - qty }).eq('id', prodId);
+        // 2. ตัดสต็อก
+        const { error: stockErr } = await supabaseClient.from('products')
+          .update({ stock: product.stock - qty })
+          .eq('id', pId);
         if(stockErr) throw stockErr;
 
         Swal.fire('สำเร็จ!', 'บันทึกการขายและตัดสต็อกเรียบร้อย', 'success');
         document.getElementById('formSale').reset();
         calcVAT();
         refreshAllData();
-      } catch (err) {
-        Swal.fire('ข้อผิดพลาด', err.message, 'error');
+      } catch (error) {
+        console.error(error);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการขายได้', 'error');
       }
     }
 
@@ -769,8 +764,10 @@
       let totalQty = 0, totalCost = 0, totalSub = 0, totalProfit = 0;
       let historyHtml = '';
 
-      globalSales.forEach(s => {
-        if(!s.date) return;
+      // เรียงจากใหม่ไปเก่า
+      let sortedSales = [...globalSales].sort((a, b) => b.receiptId.localeCompare(a.receiptId));
+
+      sortedSales.forEach(s => {
         let sMonth = s.date.split('/')[1] + "/" + s.date.split('/')[2];
         if(sMonth === targetMonth) {
            totalQty += Number(s.qty);
@@ -917,8 +914,10 @@
        let targetMonth = filter.split('-')[1] + "/" + filter.split('-')[0];
        
        let html = '';
-       globalTransactions.forEach(t => {
-          if(!t.date) return;
+       // เรียงจากใหม่ไปเก่า
+       let sortedTx = [...globalTransactions].sort((a, b) => b.id.localeCompare(a.id));
+
+       sortedTx.forEach(t => {
           let tMonth = t.date.split('/')[1] + "/" + t.date.split('/')[2];
           if(tMonth === targetMonth) {
               html += `<tr>
@@ -949,8 +948,9 @@
        let totalExpense = 0;
        let count = 1;
        
-       globalTransactions.forEach(t => {
-          if(!t.date) return;
+       let sortedTx = [...globalTransactions].sort((a, b) => a.id.localeCompare(b.id)); // พิมพ์เรียงตามเวลาเก่าไปใหม่
+
+       sortedTx.forEach(t => {
           let tMonth = t.date.split('/')[1] + "/" + t.date.split('/')[2];
           if (filter && tMonth !== targetMonth) return;
 
@@ -969,9 +969,7 @@
           </tr>`;
        });
        
-       if(html === '') {
-          html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
-       }
+       if(html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
        
        document.getElementById('txPrintBody').innerHTML = html;
        document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -987,32 +985,35 @@
        setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
     }
 
-    // บันทึกธุรกรรมลง Supabase
     async function submitTransaction(e) {
        e.preventDefault();
-       let dRaw = document.getElementById('tx_date').value.split('-');
-       let fDate = `${dRaw[2]}/${dRaw[1]}/${dRaw[0]}`;
-
-       let data = {
-         date: fDate,
+       let id = document.getElementById('tx_id').value;
+       let txData = {
+         date: formatDateToTH(document.getElementById('tx_date').value),
          type: document.getElementById('tx_type').value,
          category: document.getElementById('tx_category').value,
-         amount: parseFloat(document.getElementById('tx_amount').value),
+         amount: Number(document.getElementById('tx_amount').value),
          note: document.getElementById('tx_note').value
        };
-       let id = document.getElementById('tx_id').value;
-       if(id) data.id = id;
-
+       
        Swal.showLoading();
        try {
-         const { error } = await supabase.from('transactions').upsert(data);
-         if(error) throw error;
-
+         if (id) {
+            // Update
+            const { error } = await supabaseClient.from('transactions').update(txData).eq('id', id);
+            if(error) throw error;
+         } else {
+            // Insert
+            txData.id = "TX-" + Date.now();
+            const { error } = await supabaseClient.from('transactions').insert([txData]);
+            if(error) throw error;
+         }
          Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
          resetTxForm();
          refreshAllData();
-       } catch(err) {
-         Swal.fire('ผิดพลาด', err.message, 'error');
+       } catch (error) {
+         console.error(error);
+         Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
        }
     }
 
@@ -1043,11 +1044,10 @@
        document.getElementById('btnCancelTxEdit').classList.add('d-none');
     }
 
-    // ลบธุรกรรมใน Supabase
     function deleteTxConfirm(id) {
        Swal.fire({
           title: 'ยืนยันลบข้อมูล?',
-          text: "คุณต้องการลบรายการนี้ใช่หรือไม่!",
+          text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#ef4444',
@@ -1058,55 +1058,54 @@
           if (result.isConfirmed) {
              Swal.showLoading();
              try {
-                const { error } = await supabase.from('transactions').delete().eq('id', id);
-                if (error) throw error;
-                Swal.fire('ลบรายการสำเร็จ', 'ลบข้อมูลเรียบร้อยแล้ว', 'success');
+                const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+                if(error) throw error;
+                Swal.fire('ลบรายการสำเร็จ', '', 'success');
                 refreshAllData();
-             } catch (err) {
-                Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+             } catch (error) {
+                console.error(error);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
              }
           }
        });
     }
 
-    // บันทึกสินค้าลง Supabase
     async function submitProduct(e) {
       e.preventDefault();
       let id = document.getElementById('p_id').value;
-      
-      let dRaw = document.getElementById('p_date').value.split('-');
-      let fDate = `${dRaw[2]}/${dRaw[1]}/${dRaw[0]}`;
-
-      let data = {
-        date: fDate,
+      let prodData = {
+        updatedAt: formatDateToTH(document.getElementById('p_date').value),
         name: document.getElementById('p_name').value,
         brand: document.getElementById('p_brand').value,
-        cost: parseFloat(document.getElementById('p_cost').value),
-        actualPrice: parseFloat(document.getElementById('p_actualPrice').value),
-        stock: parseInt(document.getElementById('p_stock').value)
+        cost: Number(document.getElementById('p_cost').value),
+        actualPrice: Number(document.getElementById('p_actualPrice').value),
+        stock: Number(document.getElementById('p_stock').value)
       };
-      if(id) data.id = id;
 
       Swal.showLoading();
       try {
-        const { error } = await supabase.from('products').upsert(data);
-        if(error) throw error;
-
+        if(id) {
+           const { error } = await supabaseClient.from('products').update(prodData).eq('id', id);
+           if(error) throw error;
+        } else {
+           prodData.id = "PROD-" + Date.now();
+           const { error } = await supabaseClient.from('products').insert([prodData]);
+           if(error) throw error;
+        }
         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
         resetProductForm();
         refreshAllData();
-      } catch (err) {
-        Swal.fire('ล้มเหลว', err.message, 'error');
+      } catch(error) {
+        console.error(error);
+        Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
     }
 
     function editProduct(id, date, name, brand, cost, actualPrice, stock) {
       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
-      if(date) {
-         let parts = date.split('/');
-         if(parts.length === 3) document.getElementById('p_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
+      let parts = date.split('/');
+      if(parts.length === 3) document.getElementById('p_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
       document.getElementById('p_name').value = name;
       document.getElementById('p_brand').value = brand;
       document.getElementById('p_cost').value = cost;
@@ -1115,13 +1114,14 @@
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
-      document.getElementById('page-products').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetProductForm() {
       document.getElementById('productPageTitle').innerText = "จัดการข้อมูลสินค้าในคลัง / นำเข้าสต็อก";
       document.getElementById('formProduct').reset();
       document.getElementById('p_id').value = '';
+      let today = new Date().toISOString().split('T')[0];
+      document.getElementById('p_date').value = today;
       document.getElementById('btnSaveProduct').className = "btn btn-custom-orange w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
       document.getElementById('btnCancelEdit').classList.add('d-none');
@@ -1132,6 +1132,8 @@
       document.getElementById('p_date').value = today;
       document.getElementById('saleDate').value = today;
       document.getElementById('tx_date').value = today;
+      
+      // เริ่มดึงข้อมูลเมื่อโหลดหน้าเว็บ
       refreshAllData();
     };
   </script>
