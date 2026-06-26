@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
+  <script>
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'login.html';
+    }
+  </script>
   <meta charset="UTF-8">
   <title>ระบบจัดการ ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -10,54 +16,252 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root { 
-      --dark-blue: #0f172a; 
+    :root {
+      --dark-blue: #0f172a;
       --sidebar-bg: #1e293b;
-      --orange: #f97316; 
-      --light-bg: #f8fafc; 
-      --white: #ffffff; 
+      --orange: #f97316;
+      --light-bg: #f8fafc;
+      --white: #ffffff;
       --text-muted: #64748b;
       --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
-    body { font-family: 'Prompt', sans-serif; background-color: var(--light-bg); color: #334155; overflow-x: hidden; }
-    .text-orange { color: var(--orange) !important; }
-    .text-dark-blue { color: var(--dark-blue) !important; }
-    .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; background: linear-gradient(180deg, var(--dark-blue) 0%, var(--sidebar-bg) 100%); color: var(--white); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
-    .logo-area { padding: 30px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .nav-links { list-style: none; padding: 0; margin-top: 20px; }
-    .nav-links li { padding: 14px 20px; margin: 8px 16px; cursor: pointer; transition: all 0.3s ease; font-weight: 400; border-radius: 12px; color: #cbd5e1; }
-    .nav-links li:hover, .nav-links li.active { background-color: rgba(249, 115, 22, 0.15); color: var(--orange); font-weight: 500; transform: translateX(5px); }
-    .nav-links li i { margin-right: 15px; width: 20px; text-align: center; font-size: 1.1rem; }
-    .main-content { margin-left: 280px; transition: 0.3s; min-height: 100vh; }
-    .topbar { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 999; }
-    .card { box-shadow: var(--shadow-sm); border: none; border-radius: 1rem; transition: transform 0.3s ease; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--white); padding: 25px 20px; border-radius: 1.2rem; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.02); }
-    .stat-card h6 { color: var(--text-muted); font-size: 0.95rem; margin: 0; font-weight: 500;}
-    .stat-card h3 { font-weight: 700; margin-top: 12px; margin-bottom: 0; font-size: 1.8rem; }
-    .bg-icon { position: absolute; right: -15px; bottom: -15px; font-size: 6rem; color: rgba(0,0,0,0.03); transform: rotate(-10deg); transition: 0.3s; }
-    .btn-custom-orange { background: linear-gradient(135deg, var(--orange) 0%, #d94600 100%); color: var(--white); border: none; font-weight: 500; border-radius: 0.5rem; transition: all 0.3s ease; }
-    .form-control, .form-select { border-radius: 0.5rem; border-color: #e2e8f0; padding: 0.6rem 1rem; }
-    .table th { background-color: #f1f5f9; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; border-bottom: 2px solid #e2e8f0; }
-    
-    @media (max-width: 768px) { .sidebar { left: -280px; } .sidebar.show { left: 0; } .main-content { margin-left: 0; } }
-    @media print {
-      body * { visibility: hidden; }
-      .print-area, .print-area * { visibility: visible; }
-      .print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; z-index: 99999; }
-      .sidebar, .topbar, .d-print-none, .page-section, .card { display: none !important; }
-      .print-wrapper-box.d-none { display: none !important; }
-      .print-wrapper-box:not(.d-none) { display: block !important; }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: var(--light-bg);
+      color: #334155;
+      overflow-x: hidden;
     }
-    
-    .parcel-label { border: 2px dashed #000; padding: 30px; width: 100%; max-width: 600px; margin: 0 auto; background: #fff; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    
-    .double-bottom { border-bottom: 4px double #000 !important; }
-    .invoice-box { background: #fff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 0 auto; max-width: 850px; }
+
+    .text-orange {
+      color: var(--orange) !important;
+    }
+
+    .text-dark-blue {
+      color: var(--dark-blue) !important;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: linear-gradient(180deg, var(--dark-blue) 0%, var(--sidebar-bg) 100%);
+      color: var(--white);
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000;
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo-area {
+      padding: 30px 20px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-links {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    .nav-links li {
+      padding: 14px 20px;
+      margin: 8px 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 400;
+      border-radius: 12px;
+      color: #cbd5e1;
+    }
+
+    .nav-links li:hover,
+    .nav-links li.active {
+      background-color: rgba(249, 115, 22, 0.15);
+      color: var(--orange);
+      font-weight: 500;
+      transform: translateX(5px);
+    }
+
+    .nav-links li i {
+      margin-right: 15px;
+      width: 20px;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .main-content {
+      margin-left: 280px;
+      transition: 0.3s;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background-color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 15px 30px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .card {
+      box-shadow: var(--shadow-sm);
+      border: none;
+      border-radius: 1rem;
+      transition: transform 0.3s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--white);
+      padding: 25px 20px;
+      border-radius: 1.2rem;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.02);
+    }
+
+    .stat-card h6 {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .stat-card h3 {
+      font-weight: 700;
+      margin-top: 12px;
+      margin-bottom: 0;
+      font-size: 1.8rem;
+    }
+
+    .bg-icon {
+      position: absolute;
+      right: -15px;
+      bottom: -15px;
+      font-size: 6rem;
+      color: rgba(0, 0, 0, 0.03);
+      transform: rotate(-10deg);
+      transition: 0.3s;
+    }
+
+    .btn-custom-orange {
+      background: linear-gradient(135deg, var(--orange) 0%, #d94600 100%);
+      color: var(--white);
+      border: none;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 0.5rem;
+      border-color: #e2e8f0;
+      padding: 0.6rem 1rem;
+    }
+
+    .table th {
+      background-color: #f1f5f9;
+      color: #475569;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        left: -280px;
+      }
+
+      .sidebar.show {
+        left: 0;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      .print-area,
+      .print-area * {
+        visibility: visible;
+      }
+
+      .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+        z-index: 99999;
+      }
+
+      .sidebar,
+      .topbar,
+      .d-print-none,
+      .page-section,
+      .card {
+        display: none !important;
+      }
+
+      .print-wrapper-box.d-none {
+        display: none !important;
+      }
+
+      .print-wrapper-box:not(.d-none) {
+        display: block !important;
+      }
+    }
+
+    .parcel-label {
+      border: 2px dashed #000;
+      padding: 30px;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .double-bottom {
+      border-bottom: 4px double #000 !important;
+    }
+
+    .invoice-box {
+      background: #fff;
+      padding: 30px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin: 0 auto;
+      max-width: 850px;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="sidebar" id="sidebar">
@@ -65,7 +269,8 @@
       <h5 class="m-0 fw-bold"><i class="fa-solid fa-laptop text-orange fs-3 mb-2"></i><br>ระบบจัดการร้าน</h5>
     </div>
     <ul class="nav-links">
-      <li class="active" onclick="showPage('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> แดชบอร์ดภาพรวมร้าน</li>
+      <li class="active" onclick="showPage('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> แดชบอร์ดภาพรวมร้าน
+      </li>
       <li onclick="showPage('view', this)"><i class="fa-solid fa-list-check"></i> ดูรายการสินค้า (สต็อก)</li>
       <li onclick="showPage('products', this)"><i class="fa-solid fa-boxes-stacked"></i> จัดการคลังสินค้า/ซื้อเข้า</li>
       <li onclick="showPage('sales', this)"><i class="fa-solid fa-cash-register"></i> ขายสินค้า/ตัดสต็อก</li>
@@ -77,82 +282,158 @@
   <div class="main-content" id="mainContent">
     <div class="topbar d-flex justify-content-between align-items-center d-print-none">
       <div class="d-flex align-items-center">
-        <button class="btn d-md-none border fs-5 text-muted me-3" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-        <h6 class="m-0 fw-bold text-dark-blue"><i class="fa-solid fa-bolt text-orange me-2"></i> ข้อมูลเชื่อมต่อกับ Supabase Database</h6>
+        <button class="btn d-md-none border fs-5 text-muted me-3" onclick="toggleSidebar()"><i
+            class="fa-solid fa-bars"></i></button>
+        <h6 class="m-0 fw-bold text-dark-blue"><i class="fa-solid fa-bolt text-orange me-2"></i> ข้อมูลเชื่อมต่อกับ
+          Supabase Database</h6>
       </div>
       <div class="d-flex align-items-center gap-2">
-         <label class="small fw-bold text-muted mb-0"><i class="fa-regular fa-calendar-check text-orange"></i> เลือกเดือน:</label>
-         <input type="month" id="monthFilter" class="form-control form-control-sm border-orange text-dark-blue fw-bold shadow-sm" onchange="refreshAllData()">
+        <label class="small fw-bold text-muted mb-0"><i class="fa-regular fa-calendar-check text-orange"></i>
+          เลือกเดือน:</label>
+        <input type="month" id="monthFilter"
+          class="form-control form-control-sm border-orange text-dark-blue fw-bold shadow-sm"
+          onchange="refreshAllData()">
+        <button class="btn btn-sm btn-outline-danger ms-3" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+        </button>
       </div>
     </div>
 
     <div class="container-fluid py-4 px-md-4">
-      
+
       <div id="page-dashboard" class="page-section d-print-none">
         <h4 class="mb-4 fw-bold text-dark-blue">แดชบอร์ดประเมินร้าน (เรียลไทม์)</h4>
-        
+
         <div class="row g-3 mb-3">
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>ยอดขายเดือนนี้</h6><h3 class="text-orange" id="dashSales">฿0</h3><i class="fa-solid fa-coins bg-icon"></i></div></div>
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>กำไรสุทธิเดือนนี้</h6><h3 class="text-success" id="dashProfit">฿0</h3><i class="fa-solid fa-arrow-trend-up bg-icon"></i></div></div>
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>ขายได้เดือนนี้</h6><h3 class="text-primary" id="dashQty">0 เครื่อง</h3><i class="fa-solid fa-laptop bg-icon"></i></div></div>
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>แบรนด์ขายดีสุด</h6><h3 class="text-info fs-4 mt-3 fw-bold" id="dashBestBrand">-</h3><i class="fa-solid fa-award bg-icon"></i></div></div>
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>สินค้าคงเหลือคลัง</h6><h3 class="text-danger" id="dashStock">0 ชิ้น</h3><i class="fa-solid fa-box-open bg-icon"></i></div></div>
-          <div class="col-6 col-md-4 col-lg-2"><div class="stat-card px-3 py-4"><h6>ยอดขายปีนี้</h6><h3 class="text-secondary" id="dashYearSales">฿0</h3><i class="fa-solid fa-calendar-check bg-icon"></i></div></div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>ยอดขายเดือนนี้</h6>
+              <h3 class="text-orange" id="dashSales">฿0</h3><i class="fa-solid fa-coins bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>กำไรสุทธิเดือนนี้</h6>
+              <h3 class="text-success" id="dashProfit">฿0</h3><i class="fa-solid fa-arrow-trend-up bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>ขายได้เดือนนี้</h6>
+              <h3 class="text-primary" id="dashQty">0 เครื่อง</h3><i class="fa-solid fa-laptop bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>แบรนด์ขายดีสุด</h6>
+              <h3 class="text-info fs-4 mt-3 fw-bold" id="dashBestBrand">-</h3><i class="fa-solid fa-award bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>สินค้าคงเหลือคลัง</h6>
+              <h3 class="text-danger" id="dashStock">0 ชิ้น</h3><i class="fa-solid fa-box-open bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="stat-card px-3 py-4">
+              <h6>ยอดขายปีนี้</h6>
+              <h3 class="text-secondary" id="dashYearSales">฿0</h3><i class="fa-solid fa-calendar-check bg-icon"></i>
+            </div>
+          </div>
         </div>
 
         <div class="row mb-4">
-          <div class="col-12"><div class="stat-card bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4"><h6 class="text-light m-0">มูลค่าคลังทุนสินค้าปัจจุบันทั้งหมด</h6><h3 class="text-warning m-0" id="dashInventoryValue">฿0</h3></div></div>
+          <div class="col-12">
+            <div class="stat-card bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4">
+              <h6 class="text-light m-0">มูลค่าคลังทุนสินค้าปัจจุบันทั้งหมด</h6>
+              <h3 class="text-warning m-0" id="dashInventoryValue">฿0</h3>
+            </div>
+          </div>
         </div>
 
         <div class="row mb-4">
           <div class="col-lg-6 mb-3 mb-lg-0">
-             <div class="card p-3 h-100 shadow-sm">
-                <h6 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-chart-bar text-orange"></i> กราฟยอดขายรายวัน (เดือนนี้)</h6>
-                <div style="height: 250px;">
-                   <canvas id="salesChart"></canvas>
-                </div>
-             </div>
+            <div class="card p-3 h-100 shadow-sm">
+              <h6 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-chart-bar text-orange"></i> กราฟยอดขายรายเดือน
+                (ปีนี้)</h6>
+              <div style="height: 250px;">
+                <canvas id="salesChart"></canvas>
+              </div>
+            </div>
           </div>
           <div class="col-lg-6">
-             <div class="card p-3 h-100 shadow-sm">
-                <h6 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-chart-line text-success"></i> กราฟกำไรสุทธิรายวัน (เดือนนี้)</h6>
-                <div style="height: 250px;">
-                   <canvas id="profitChart"></canvas>
-                </div>
-             </div>
+            <div class="card p-3 h-100 shadow-sm">
+              <h6 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-chart-line text-success"></i>
+                กราฟยอดขายรายปี</h6>
+              <div style="height: 250px;">
+                <canvas id="profitChart"></canvas>
+              </div>
+            </div>
           </div>
         </div>
         <div class="row">
-            <div class="col-lg-8">
-                <div class="card p-4">
-                    <h5 class="fw-bold text-dark-blue mb-3">5 รายการขายล่าสุด (เรียลไทม์)</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover text-center align-middle">
-                            <thead class="table-light"><tr><th>วันที่</th><th class="text-start">รายการสินค้า</th><th>ยอดรวม (รวม VAT)</th><th>กำไร</th></tr></thead>
-                            <tbody id="dashRecentSales"></tbody>
-                        </table>
-                    </div>
-                </div>
+          <div class="col-lg-8">
+            <div class="card p-4">
+              <h5 class="fw-bold text-dark-blue mb-3">5 รายการขายล่าสุด (เรียลไทม์)</h5>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover text-center align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>วันที่</th>
+                      <th class="text-start">รายการสินค้า</th>
+                      <th>ยอดรวม (รวม VAT)</th>
+                      <th>กำไร</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashRecentSales"></tbody>
+                </table>
+              </div>
             </div>
-            <div class="col-lg-4">
-                <div class="card p-4 border-top border-danger border-4">
-                    <h5 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation"></i> สินค้าใกล้หมด (โชว์สูงสุด 10 รายการ)</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle">
-                            <thead class="table-light"><tr><th>ชื่อสินค้า</th><th class="text-center">คงเหลือ</th></tr></thead>
-                            <tbody id="dashLowStock"></tbody>
-                        </table>
-                    </div>
-                </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card p-4 border-top border-danger border-4">
+              <h5 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation"></i> สินค้าใกล้หมด
+                (โชว์สูงสุด 10 รายการ)</h5>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>ชื่อสินค้า</th>
+                      <th class="text-center">คงเหลือ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashLowStock"></tbody>
+                </table>
+              </div>
             </div>
+          </div>
         </div>
       </div>
 
       <div id="page-view" class="page-section d-none d-print-none">
         <h4 class="mb-4 fw-bold text-dark-blue">ตรวจสอบรายการสินค้าและสต็อกคงเหลือปัจจุบัน</h4>
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label class="small fw-bold text-muted mb-1"><i class="fa-solid fa-filter text-orange"></i> กรองยี่ห้อ
+              (Brand)</label>
+            <select class="form-select form-select-sm" id="viewBrandFilter" onchange="renderViewProducts()">
+              <option value="">-- ยี่ห้อทั้งหมด --</option>
+            </select>
+          </div>
+        </div>
         <div class="card p-4">
           <table class="table table-hover align-middle">
-            <thead class="text-center table-light"><tr><th>รหัสสินค้า</th><th class="text-start">ชื่อสินค้า/รุ่น</th><th>ยี่ห้อ</th><th class="text-success">ราคาขายจริง</th><th>จำนวนคงเหลือ</th></tr></thead>
+            <thead class="text-center table-light">
+              <tr>
+                <th>รหัสสินค้า</th>
+                <th>วันที่ลงรายการ</th>
+                <th class="text-start">ชื่อสินค้า/รุ่น</th>
+                <th>ยี่ห้อ</th>
+                <th class="text-success">ราคาขายจริง</th>
+                <th>จำนวนคงเหลือ</th>
+              </tr>
+            </thead>
             <tbody id="viewData" class="text-center"></tbody>
           </table>
         </div>
@@ -162,64 +443,136 @@
         <h4 class="mb-4 fw-bold text-dark-blue" id="productPageTitle">จัดการข้อมูลสินค้าในคลัง / นำเข้าสต็อก</h4>
         <div class="card p-4 mb-4 border-top border-orange border-4">
           <form id="formProduct" onsubmit="submitProduct(event)">
-            <input type="hidden" id="p_id"> 
+            <input type="hidden" id="p_id">
             <div class="row g-3 mb-3">
-              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">วันที่อัปเดต</label><input type="date" class="form-control" id="p_date" required></div>
-              <div class="col-md-4"><label class="small fw-bold text-muted mb-1">ชื่อสินค้า/รุ่นโน๊ตบุ๊ค</label><input type="text" class="form-control" id="p_name" required></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">วันที่อัปเดต</label><input type="date"
+                  class="form-control" id="p_date" required></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted mb-1">ชื่อสินค้า/รุ่นโน๊ตบุ๊ค</label><input
+                  type="text" class="form-control" id="p_name" required></div>
               <div class="col-md-3">
                 <label class="small fw-bold text-muted mb-1">ยี่ห้อ</label>
                 <select class="form-select" id="p_brand" required>
-                  <option value="">-- เลือกยี่ห้อ --</option><option value="ASUS">ASUS</option><option value="Acer">Acer</option><option value="Lenovo">Lenovo</option><option value="HP">HP</option><option value="Dell">Dell</option><option value="MSI">MSI</option><option value="Apple">Apple</option><option value="อื่นๆ">อื่นๆ</option>
+                  <option value="">-- เลือกยี่ห้อ --</option>
+                  <option value="ASUS">ASUS</option>
+                  <option value="Acer">Acer</option>
+                  <option value="Lenovo">Lenovo</option>
+                  <option value="HP">HP</option>
+                  <option value="Dell">Dell</option>
+                  <option value="MSI">MSI</option>
+                  <option value="Apple">Apple</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
                 </select>
               </div>
-              <div class="col-md-2"><label class="small fw-bold text-muted mb-1">จำนวนคลัง</label><input type="number" class="form-control" id="p_stock" required min="0"></div>
-              <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาทุนต่อชิ้น (฿)</label><input type="number" class="form-control" id="p_cost" required min="0"></div>
-              <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาขายหน้าร้านต่อชิ้น (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0"></div>
+              <div class="col-md-2"><label class="small fw-bold text-muted mb-1">จำนวนคลัง</label><input type="number"
+                  class="form-control" id="p_stock" required min="0"></div>
+              <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาทุนต่อชิ้น (฿)</label><input
+                  type="number" class="form-control" id="p_cost" required min="0"></div>
+              <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาขายหน้าร้านต่อชิ้น
+                  (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0">
+              </div>
             </div>
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-custom-orange w-100" id="btnSaveProduct"><i class="fa-solid fa-floppy-disk"></i> บันทึกรายการ</button>
-              <button type="button" class="btn btn-secondary d-none" id="btnCancelEdit" onclick="resetProductForm()"><i class="fa-solid fa-xmark"></i> ยกเลิก</button>
+              <button type="submit" class="btn btn-custom-orange w-100" id="btnSaveProduct"><i
+                  class="fa-solid fa-floppy-disk"></i> บันทึกรายการ</button>
+              <button type="button" class="btn btn-secondary d-none" id="btnCancelEdit" onclick="resetProductForm()"><i
+                  class="fa-solid fa-xmark"></i> ยกเลิก</button>
             </div>
           </form>
         </div>
         <div class="card p-4">
-            <table class="table table-hover align-middle text-center"><thead class="table-light"><tr><th>ชื่อสินค้า</th><th>ยี่ห้อ</th><th>ทุน</th><th>ขาย</th><th>คงเหลือ</th><th>จัดการ</th></tr></thead><tbody id="productData"></tbody></table>
+          <div class="row g-2 mb-3 align-items-center">
+            <div class="col-auto"><label class="fw-bold small text-muted">ตัวกรอง:</label></div>
+            <div class="col-md-3">
+              <input type="month" class="form-control form-control-sm" id="manageDateFilter" onchange="renderManageProducts()">
+            </div>
+            <div class="col-md-3">
+              <select class="form-select form-select-sm" id="manageBrandFilter" onchange="renderManageProducts()">
+                <option value="">-- ยี่ห้อทั้งหมด --</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select form-select-sm" id="manageStockFilter" onchange="renderManageProducts()">
+                <option value="">-- คงเหลือทั้งหมด --</option>
+                <option value="in_stock">มีสินค้า (>0)</option>
+                <option value="out_of_stock">หมดสต็อก (0)</option>
+              </select>
+            </div>
+          </div>
+          <table class="table table-hover align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>วันที่ลงรายการ</th>
+                <th>ชื่อสินค้า</th>
+                <th>ยี่ห้อ</th>
+                <th>ทุน</th>
+                <th>ขาย</th>
+                <th>คงเหลือ</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="productData"></tbody>
+          </table>
         </div>
       </div>
 
       <div id="page-sales" class="page-section d-none d-print-none">
         <h4 class="mb-4 fw-bold text-dark-blue">เปิดบิลขายสินค้า และตัดสต็อกสินค้าอัตโนมัติ</h4>
         <div class="card p-3 mb-4 border-start border-info border-4 bg-white shadow-sm">
-          <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-magnifying-glass"></i> ค้นหาสินค้า / ตรวจสอบสต็อกด่วน (Real-time)</h6>
+          <h6 class="fw-bold text-info mb-2"><i class="fa-solid fa-magnifying-glass"></i> ค้นหาสินค้า / ตรวจสอบสต็อกด่วน
+            (Real-time)</h6>
           <div class="row g-2 mb-2">
-            <div class="col-md-4"><select class="form-select form-select-sm" id="filterBrand" onchange="filterStock()"></select></div>
-            <div class="col-md-8"><input type="text" class="form-control form-control-sm" id="filterModel" placeholder="พิมพ์เพื่อค้นหาชื่อรุ่น..." onkeyup="filterStock()"></div>
+            <div class="col-md-4"><select class="form-select form-select-sm" id="filterBrand"
+                onchange="filterStock()"></select></div>
+            <div class="col-md-8"><input type="text" class="form-control form-control-sm" id="filterModel"
+                placeholder="พิมพ์เพื่อค้นหาชื่อรุ่น..." onkeyup="filterStock()"></div>
           </div>
           <div class="table-responsive custom-scrollbar" style="max-height: 150px; overflow-y: auto;">
-            <table class="table table-sm table-bordered table-hover text-center align-middle mb-0" style="font-size: 0.85rem;">
-              <thead class="table-light position-sticky top-0"><tr><th class="text-start">ชื่อสินค้า/รุ่น</th><th>ยี่ห้อ</th><th>ราคา</th><th>คงเหลือ</th></tr></thead>
+            <table class="table table-sm table-bordered table-hover text-center align-middle mb-0"
+              style="font-size: 0.85rem;">
+              <thead class="table-light position-sticky top-0">
+                <tr>
+                  <th class="text-start">ชื่อสินค้า/รุ่น</th>
+                  <th>ยี่ห้อ</th>
+                  <th>ราคา</th>
+                  <th>คงเหลือ</th>
+                </tr>
+              </thead>
               <tbody id="liveStockBody"></tbody>
             </table>
           </div>
         </div>
         <div class="card p-4 border-top border-success border-4">
-            <form id="formSale" onsubmit="submitSale(event)">
-                <div class="row g-3 mb-3">
-                  <div class="col-md-4"><label class="small fw-bold text-muted">วันที่ขาย</label><input type="date" class="form-control" id="saleDate" required></div>
-                  <div class="col-md-8"><label class="small fw-bold text-muted">เลือกสินค้าที่จะตัดสต็อก</label><select class="form-select" id="saleProduct" required></select></div>
-                  <div class="col-md-6"><label class="small fw-bold text-muted">ราคาที่ขายจริงต่อหน่วย (ไม่รวม VAT)</label><input type="number" class="form-control text-success fw-bold" id="saleCustomPrice" required oninput="calcVAT()"></div>
-                  <div class="col-md-6"><label class="small fw-bold text-muted">จำนวนที่ขาย</label><input type="number" class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
-                  <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text" class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
-                  <div class="col-md-4"><label class="small fw-bold text-muted">VAT 7%</label><input type="text" class="form-control bg-light text-danger" id="saleVat" readonly value="0.00"></div>
-                  <div class="col-md-4"><label class="small fw-bold text-muted">ยอดรวมทั้งสิ้น (รวม VAT)</label><input type="text" class="form-control bg-light text-primary fw-bold fs-5" id="saleGrandTotal" readonly value="0.00"></div>
-                </div>
-                <hr>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6"><label class="small fw-bold text-muted">ชื่อลูกค้า (ออกใบกำกับภาษี/ใบเสนอราคา)</label><input type="text" class="form-control" id="saleCusName" placeholder="ชื่อ-นามสกุล หรือ ชื่อบริษัท"></div>
-                    <div class="col-md-6"><label class="small fw-bold text-muted">ที่อยู่ลูกค้า (และเบอร์โทรศัพท์สำหรับพัสดุ)</label><input type="text" class="form-control" id="saleAddress" placeholder="ระบุที่อยู่จัดส่งและออกใบกำกับภาษี"></div>
-                </div>
-                <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5" id="btnSaveSale"><i class="fa-solid fa-check-circle"></i> ยืนยันการขาย ตัดสต็อกทันที</button>
-            </form>
+          <form id="formSale" onsubmit="submitSale(event)">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4"><label class="small fw-bold text-muted">วันที่ขาย</label><input type="date"
+                  class="form-control" id="saleDate" required></div>
+              <div class="col-md-8"><label class="small fw-bold text-muted">เลือกสินค้าที่จะตัดสต็อก</label><select
+                  class="form-select" id="saleProduct" required></select></div>
+              <div class="col-md-6"><label class="small fw-bold text-muted">ราคาที่ขายจริงต่อหน่วย (ไม่รวม
+                  VAT)</label><input type="number" class="form-control text-success fw-bold" id="saleCustomPrice"
+                  required oninput="calcVAT()"></div>
+              <div class="col-md-6"><label class="small fw-bold text-muted">จำนวนที่ขาย</label><input type="number"
+                  class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text"
+                  class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted">VAT 7%</label><input type="text"
+                  class="form-control bg-light text-danger" id="saleVat" readonly value="0.00"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted">ยอดรวมทั้งสิ้น (รวม VAT)</label><input
+                  type="text" class="form-control bg-light text-primary fw-bold fs-5" id="saleGrandTotal" readonly
+                  value="0.00"></div>
+            </div>
+            <hr>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6"><label class="small fw-bold text-muted">ชื่อลูกค้า
+                  (ออกใบกำกับภาษี/ใบเสนอราคา)</label><input type="text" class="form-control" id="saleCusName"
+                  placeholder="ชื่อ-นามสกุล หรือ ชื่อบริษัท"></div>
+              <div class="col-md-6"><label class="small fw-bold text-muted">ที่อยู่ลูกค้า
+                  (และเบอร์โทรศัพท์สำหรับพัสดุ)</label><input type="text" class="form-control" id="saleAddress"
+                  placeholder="ระบุที่อยู่จัดส่งและออกใบกำกับภาษี"></div>
+            </div>
+            <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5" id="btnSaveSale"><i
+                class="fa-solid fa-check-circle"></i> ยืนยันการขาย ตัดสต็อกทันที</button>
+          </form>
         </div>
       </div>
 
@@ -227,26 +580,62 @@
         <h4 class="mb-4 fw-bold text-dark-blue">รายงานสรุป และเครื่องมือพิมพ์เอกสารจัดส่ง/ภาษี</h4>
         <div class="card p-4">
           <ul class="nav nav-pills mb-4" id="reportTabs">
-            <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-summary">สรุปภาพรวมยอด</button></li>
-            <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-history">ประวัติการขายสินค้า (เรียลไทม์)</button></li>
-            <li class="nav-item"><button class="nav-link fw-bold bg-light text-dark border me-2" data-bs-toggle="tab" data-bs-target="#tab-parcel"><i class="fa-solid fa-box text-primary"></i> ใบปะหน้ากล่องพัสดุ</button></li>
-            <li class="nav-item ms-auto"><button class="btn btn-outline-primary fw-bold" onclick="openInvoiceCreator()"><i class="fa-solid fa-file-circle-plus"></i> เปิดฟอร์มสร้างใบกำกับ/ใบเสนอราคาอิสระ</button></li>
+            <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab"
+                data-bs-target="#tab-summary">สรุปภาพรวมยอด</button></li>
+            <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab"
+                data-bs-target="#tab-history">ประวัติการขายสินค้า (เรียลไทม์)</button></li>
+            <li class="nav-item"><button class="nav-link fw-bold bg-light text-dark border me-2" data-bs-toggle="tab"
+                data-bs-target="#tab-parcel"><i class="fa-solid fa-box text-primary"></i> ใบปะหน้ากล่องพัสดุ</button>
+            </li>
+            <li class="nav-item ms-auto"><button class="btn btn-outline-primary fw-bold"
+                onclick="openInvoiceCreator()"><i class="fa-solid fa-file-circle-plus"></i>
+                เปิดฟอร์มสร้างใบกำกับ/ใบเสนอราคาอิสระ</button></li>
           </ul>
-          
+
           <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-summary">
-               <div class="row text-center g-3 mb-4">
-                  <div class="col-md-3"><div class="p-3 bg-light rounded-3 shadow-sm border-start border-primary border-4"><h6>เครื่องที่ขายได้เดือนนี้</h6><h4 class="text-primary fw-bold m-0" id="repQty">0 เครื่อง</h4></div></div>
-                  <div class="col-md-3"><div class="p-3 bg-light rounded-3 shadow-sm border-start border-info border-4"><h6>ต้นทุนสะสมรวม</h6><h4 class="text-info fw-bold m-0" id="repCost">฿0.00</h4></div></div>
-                  <div class="col-md-3"><div class="p-3 bg-light rounded-3 shadow-sm border-start border-orange border-4"><h6>รายรับขายรวม (ก่อน VAT)</h6><h4 class="text-orange fw-bold m-0" id="repSubTotal">฿0.00</h4></div></div>
-                  <div class="col-md-3"><div class="p-3 bg-light rounded-3 shadow-sm border-start border-success border-4"><h6>กำไรขั้นต้นรวม</h6><h4 class="text-success fw-bold m-0" id="repProfit">฿0.00</h4></div></div>
-               </div>
+              <div class="row text-center g-3 mb-4">
+                <div class="col-md-3">
+                  <div class="p-3 bg-light rounded-3 shadow-sm border-start border-primary border-4">
+                    <h6>เครื่องที่ขายได้เดือนนี้</h6>
+                    <h4 class="text-primary fw-bold m-0" id="repQty">0 เครื่อง</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-3 bg-light rounded-3 shadow-sm border-start border-info border-4">
+                    <h6>ต้นทุนสะสมรวม</h6>
+                    <h4 class="text-info fw-bold m-0" id="repCost">฿0.00</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-3 bg-light rounded-3 shadow-sm border-start border-orange border-4">
+                    <h6>รายรับขายรวม (ก่อน VAT)</h6>
+                    <h4 class="text-orange fw-bold m-0" id="repSubTotal">฿0.00</h4>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-3 bg-light rounded-3 shadow-sm border-start border-success border-4">
+                    <h6>กำไรขั้นต้นรวม</h6>
+                    <h4 class="text-success fw-bold m-0" id="repProfit">฿0.00</h4>
+                  </div>
+                </div>
+              </div>
             </div>
-            
+
             <div class="tab-pane fade" id="tab-history">
               <div class="table-responsive">
                 <table class="table table-hover align-middle text-center" style="font-size:0.9rem;">
-                  <thead class="table-light"><tr><th>เลขบิลขาย</th><th>วันที่</th><th>รายการสินค้า</th><th>จำนวน</th><th>ยอดรวมสุทธิ</th><th>ชื่อลูกค้า</th><th>การกระทำ / พิมพ์ด่วน</th></tr></thead>
+                  <thead class="table-light">
+                    <tr>
+                      <th>เลขบิลขาย</th>
+                      <th>วันที่</th>
+                      <th>รายการสินค้า</th>
+                      <th>จำนวน</th>
+                      <th>ยอดรวมสุทธิ</th>
+                      <th>ชื่อลูกค้า</th>
+                      <th>การกระทำ / พิมพ์ด่วน</th>
+                    </tr>
+                  </thead>
                   <tbody id="salesHistoryData"></tbody>
                 </table>
               </div>
@@ -258,45 +647,74 @@
                   <div class="card p-3 border shadow-none bg-light">
                     <h6 class="fw-bold mb-3 text-dark-blue">กรอกข้อมูล/ตรวจสอบข้อมูลผู้รับจัดส่ง</h6>
                     <form id="parcelForm" onsubmit="event.preventDefault(); generateParcelLabel();">
-                      <div class="mb-2"><label class="small fw-bold">ชื่อ-นามสกุล ผู้รับพัสดุ</label><input type="text" class="form-control form-control-sm" id="pcName" required></div>
-                      <div class="mb-3"><label class="small fw-bold">ที่อยู่จัดส่งโดยละเอียด</label><textarea class="form-control form-control-sm" id="pcAddress" rows="3" placeholder="ระบุ บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" required></textarea></div>
-                      <div class="mb-3"><label class="small fw-bold">เบอร์โทรศัพท์ผู้รับ</label><input type="text" class="form-control form-control-sm" id="pcPhone" required></div>
-                      <button type="submit" class="btn btn-primary w-100 btn-sm fw-bold"><i class="fa-solid fa-print"></i> พิมพ์ใบปะหน้ากล่องพัสดุ</button>
+                      <div class="mb-2"><label class="small fw-bold">ชื่อ-นามสกุล ผู้รับพัสดุ</label><input type="text"
+                          class="form-control form-control-sm" id="pcName" required></div>
+                      <div class="mb-3"><label class="small fw-bold">ที่อยู่จัดส่งโดยละเอียด</label><textarea
+                          class="form-control form-control-sm" id="pcAddress" rows="3"
+                          placeholder="ระบุ บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" required></textarea></div>
+                      <div class="mb-3"><label class="small fw-bold">เบอร์โทรศัพท์ผู้รับ</label><input type="text"
+                          class="form-control form-control-sm" id="pcPhone" required></div>
+                      <button type="submit" class="btn btn-primary w-100 btn-sm fw-bold"><i
+                          class="fa-solid fa-print"></i> พิมพ์ใบปะหน้ากล่องพัสดุ</button>
                     </form>
                   </div>
                 </div>
                 <div class="col-md-7">
-                   <div class="p-5 border rounded bg-white text-center text-muted small">
-                     <i class="fa-solid fa-box-open fs-1 text-orange mb-3"></i><br>
-                     สามารถคลิกปุ่ม <b>"ดึงไปใบปะหน้า"</b> จากตารางประวัติการขายเพื่อกรอกฟอร์มนี้อัตโนมัติ หรือ พิมพ์ระบุลงไปตรงนี้ได้อิสระ
-                   </div>
+                  <div class="p-5 border rounded bg-white text-center text-muted small">
+                    <i class="fa-solid fa-box-open fs-1 text-orange mb-3"></i><br>
+                    สามารถคลิกปุ่ม <b>"ดึงไปใบปะหน้า"</b> จากตารางประวัติการขายเพื่อกรอกฟอร์มนี้อัตโนมัติ หรือ
+                    พิมพ์ระบุลงไปตรงนี้ได้อิสระ
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <div class="card p-4 mt-4 d-print-none border-top border-warning border-4" id="invoiceCreatorCard" style="display:none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-               <h5 class="fw-bold text-dark-blue m-0"><i class="fa-solid fa-file-signature"></i> เครื่องมือสร้างใบเสนอราคา / ใบกำกับภาษี</h5>
-               <button class="btn btn-sm btn-outline-danger" onclick="closeInvoiceCreator()"><i class="fa-solid fa-xmark"></i> ปิดหน้านี้</button>
-            </div>
-            <div class="row g-3 mb-3">
-               <div class="col-md-3"><label class="small fw-bold">ประเภทเอกสาร</label><select id="qtDocType" class="form-select form-select-sm"><option value="ใบเสนอราคา / QUOTATION">ใบเสนอราคา</option><option value="ใบกำกับภาษี / TAX INVOICE">ใบกำกับภาษี</option></select></div>
-               <div class="col-md-3"><label class="small fw-bold">เลขที่เอกสาร</label><input type="text" id="qtDocId" class="form-control form-control-sm" placeholder="เช่น INV2026001"></div>
-               <div class="col-md-3"><label class="small fw-bold">วันที่เอกสาร</label><input type="date" id="qtDate" class="form-control form-control-sm"></div>
-               <div class="col-md-3"><label class="small fw-bold">เงื่อนไขการชำระเงิน</label><input type="text" id="qtPaymentTerm" class="form-control form-control-sm" value="เงินสด / โอนเงิน"></div>
-               <div class="col-md-6"><label class="small fw-bold">ชื่อลูกค้า / บริษัท</label><input type="text" id="qtCusName" class="form-control form-control-sm"></div>
-               <div class="col-md-6"><label class="small fw-bold">ที่อยู่ลูกค้า</label><input type="text" id="qtCusAddress" class="form-control form-control-sm"></div>
-            </div>
-            <table class="table table-sm table-bordered text-center align-middle" id="qtTable">
-               <thead class="table-light"><tr><th style="width:7%;">ลำดับ</th><th>รายการสินค้า/รายละเอียด</th><th style="width:12%;">จำนวน</th><th style="width:15%;">ราคา/หน่วย</th><th style="width:18%;">จำนวนเงิน (บาท)</th><th style="width:10%;">ลบ</th></tr></thead>
-               <tbody id="qtTableBody"></tbody>
-            </table>
-            <div class="d-flex justify-content-between">
-               <button class="btn btn-sm btn-dark" onclick="addInvoiceRow()"><i class="fa-solid fa-plus"></i> เพิ่มแถวรายการสินค้า</button>
-               <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="printCustomInvoice()"><i class="fa-solid fa-print"></i> พิมพ์เอกสารฉบับนี้</button>
-            </div>
+
+        <div class="card p-4 mt-4 d-print-none border-top border-warning border-4" id="invoiceCreatorCard"
+          style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark-blue m-0"><i class="fa-solid fa-file-signature"></i> เครื่องมือสร้างใบเสนอราคา
+              / ใบกำกับภาษี</h5>
+            <button class="btn btn-sm btn-outline-danger" onclick="closeInvoiceCreator()"><i
+                class="fa-solid fa-xmark"></i> ปิดหน้านี้</button>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="small fw-bold">ประเภทเอกสาร</label><select id="qtDocType"
+                class="form-select form-select-sm">
+                <option value="ใบเสนอราคา / QUOTATION">ใบเสนอราคา</option>
+                <option value="ใบกำกับภาษี / TAX INVOICE">ใบกำกับภาษี</option>
+              </select></div>
+            <div class="col-md-3"><label class="small fw-bold">เลขที่เอกสาร</label><input type="text" id="qtDocId"
+                class="form-control form-control-sm" placeholder="เช่น INV2026001"></div>
+            <div class="col-md-3"><label class="small fw-bold">วันที่เอกสาร</label><input type="date" id="qtDate"
+                class="form-control form-control-sm"></div>
+            <div class="col-md-3"><label class="small fw-bold">เงื่อนไขการชำระเงิน</label><input type="text"
+                id="qtPaymentTerm" class="form-control form-control-sm" value="เงินสด / โอนเงิน"></div>
+            <div class="col-md-6"><label class="small fw-bold">ชื่อลูกค้า / บริษัท</label><input type="text"
+                id="qtCusName" class="form-control form-control-sm"></div>
+            <div class="col-md-6"><label class="small fw-bold">ที่อยู่ลูกค้า</label><input type="text" id="qtCusAddress"
+                class="form-control form-control-sm"></div>
+          </div>
+          <table class="table table-sm table-bordered text-center align-middle" id="qtTable">
+            <thead class="table-light">
+              <tr>
+                <th style="width:7%;">ลำดับ</th>
+                <th>รายการสินค้า/รายละเอียด</th>
+                <th style="width:12%;">จำนวน</th>
+                <th style="width:15%;">ราคา/หน่วย</th>
+                <th style="width:18%;">จำนวนเงิน (บาท)</th>
+                <th style="width:10%;">ลบ</th>
+              </tr>
+            </thead>
+            <tbody id="qtTableBody"></tbody>
+          </table>
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-sm btn-dark" onclick="addInvoiceRow()"><i class="fa-solid fa-plus"></i>
+              เพิ่มแถวรายการสินค้า</button>
+            <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="printCustomInvoice()"><i
+                class="fa-solid fa-print"></i> พิมพ์เอกสารฉบับนี้</button>
+          </div>
         </div>
       </div>
 
@@ -304,42 +722,62 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold text-dark-blue m-0">ระบบบันทึกรายรับ - รายจ่าย (เพื่อยื่นภาษีประจำปี)</h4>
           <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="printTxReport()">
-             <i class="fa-solid fa-print"></i> พิมพ์รายงานบัญชี (ใบปะหน้าภาษี)
+            <i class="fa-solid fa-print"></i> พิมพ์รายงานบัญชี (ใบปะหน้าภาษี)
           </button>
         </div>
         <div class="card p-4 mb-4 border-top border-primary border-4">
-          <h5 class="fw-bold text-dark-blue mb-3" id="txFormTitle"><i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย</h5>
+          <h5 class="fw-bold text-dark-blue mb-3" id="txFormTitle"><i class="fa-solid fa-circle-plus text-primary"></i>
+            เพิ่มรายการบัญชีรายรับ/รายจ่าย</h5>
           <form id="txForm" onsubmit="submitTransaction(event)">
-             <input type="hidden" id="tx_id">
-             <div class="row g-3">
-                <div class="col-md-3"><label class="small fw-bold text-muted">วันที่บันทึก</label><input type="date" class="form-control" id="tx_date" required></div>
-                <div class="col-md-3">
-                  <label class="small fw-bold text-muted">ประเภทรายการ</label>
-                  <select class="form-select" id="tx_type" required>
-                     <option value="รายรับ">รายรับ (+)</option><option value="รายจ่าย">รายจ่าย (-)</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                   <label class="small fw-bold text-muted">หมวดหมู่บัญชี</label>
-                   <input type="text" class="form-control" id="tx_category" placeholder="เช่น ค่าขนส่ง, ค่าอุปกรณ์, ซ่อมเครื่อง" required>
-                </div>
-                <div class="col-md-3"><label class="small fw-bold text-muted">จำนวนเงินสุทธิ (บาท)</label><input type="number" class="form-control fw-bold" id="tx_amount" min="0" required></div>
-                <div class="col-md-12"><label class="small fw-bold text-muted">หมายเหตุอ้างอิงเอกสารเพิ่มเติม</label><input type="text" class="form-control" id="tx_note" placeholder="รายละเอียดอื่นๆ เพื่อตรวจสอบทางบัญชี"></div>
-             </div>
-             <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveTx"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี</button>
-                <button type="button" class="btn btn-secondary d-none" id="btnCancelTxEdit" onclick="resetTxForm()"><i class="fa-solid fa-xmark"></i> ยกเลิกการแก้ไข</button>
-             </div>
+            <input type="hidden" id="tx_id">
+            <div class="row g-3">
+              <div class="col-md-3"><label class="small fw-bold text-muted">วันที่บันทึก</label><input type="date"
+                  class="form-control" id="tx_date" required></div>
+              <div class="col-md-3">
+                <label class="small fw-bold text-muted">ประเภทรายการ</label>
+                <select class="form-select" id="tx_type" required>
+                  <option value="รายรับ">รายรับ (+)</option>
+                  <option value="รายจ่าย">รายจ่าย (-)</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="small fw-bold text-muted">หมวดหมู่บัญชี</label>
+                <input type="text" class="form-control" id="tx_category"
+                  placeholder="เช่น ค่าขนส่ง, ค่าอุปกรณ์, ซ่อมเครื่อง" required>
+              </div>
+              <div class="col-md-3"><label class="small fw-bold text-muted">จำนวนเงินสุทธิ (บาท)</label><input
+                  type="number" class="form-control fw-bold" id="tx_amount" min="0" required></div>
+              <div class="col-md-12"><label
+                  class="small fw-bold text-muted">หมายเหตุอ้างอิงเอกสารเพิ่มเติม</label><input type="text"
+                  class="form-control" id="tx_note" placeholder="รายละเอียดอื่นๆ เพื่อตรวจสอบทางบัญชี"></div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnSaveTx"><i
+                  class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี</button>
+              <button type="button" class="btn btn-secondary d-none" id="btnCancelTxEdit" onclick="resetTxForm()"><i
+                  class="fa-solid fa-xmark"></i> ยกเลิกการแก้ไข</button>
+            </div>
           </form>
         </div>
         <div class="card p-4">
-           <h5 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-list-check"></i> ตารางแจกแจงรายการรายรับ-รายจ่าย (ประจำเดือนที่เลือก)</h5>
-           <div class="table-responsive">
-              <table class="table table-bordered table-hover align-middle text-center">
-                 <thead class="table-light"><tr><th>รหัสรายการ</th><th>วันที่</th><th>ประเภท</th><th>หมวดหมู่บัญชี</th><th>จำนวนเงิน</th><th>หมายเหตุอ้างอิง</th><th>จัดการรายการ</th></tr></thead>
-                 <tbody id="txTableBody"></tbody>
-              </table>
-           </div>
+          <h5 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-list-check"></i> ตารางแจกแจงรายการรายรับ-รายจ่าย
+            (ประจำเดือนที่เลือก)</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>รหัสรายการ</th>
+                  <th>วันที่</th>
+                  <th>ประเภท</th>
+                  <th>หมวดหมู่บัญชี</th>
+                  <th>จำนวนเงิน</th>
+                  <th>หมายเหตุอ้างอิง</th>
+                  <th>จัดการรายการ</th>
+                </tr>
+              </thead>
+              <tbody id="txTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -348,107 +786,120 @@
 
   <div class="print-area">
     <div id="printParcelSection" class="print-wrapper-box d-none" style="padding:40px; background:#fff;">
-       <div class="parcel-label">
-          <div class="row border-bottom pb-2 mb-3 align-items-center">
-             <div class="col-6 fw-bold text-start" style="font-size:1.1rem;">ผู้ส่ง (SENDER)</div>
-             <div class="col-6 text-end small">หจก. โน๊ตบุ๊ค ไอทีอุดร<br>จ.อุดรธานี โทร. 042-xxxxxx</div>
-          </div>
-          <div style="height:40px;"></div>
-          <div class="fw-bold mb-2" style="font-size:1.4rem;"><i class="fa-solid fa-truck-fast"></i> ผู้รับ (RECEIVER) :</div>
-          <div class="p-3 border rounded bg-light" style="font-size:1.3rem; line-height:1.8; color:#000;">
-             <strong id="lblPcName"></strong><br>
-             <span id="lblPcAddress"></span><br>
-             <strong>เบอร์โทรศัพท์: </strong> <span id="lblPcPhone"></span>
-          </div>
-          <div class="text-end mt-4 text-muted small">ระบบออกใบปะหน้าอัตโนมัติ หจก. โน๊ตบุ๊ค ไอทีอุดร</div>
-       </div>
+      <div class="parcel-label">
+        <div class="row border-bottom pb-2 mb-3 align-items-center">
+          <div class="col-6 fw-bold text-start" style="font-size:1.1rem;">ผู้ส่ง (SENDER)</div>
+          <div class="col-6 text-end small">หจก. โน๊ตบุ๊ค ไอทีอุดร<br>จ.อุดรธานี โทร. 042-xxxxxx</div>
+        </div>
+        <div style="height:40px;"></div>
+        <div class="fw-bold mb-2" style="font-size:1.4rem;"><i class="fa-solid fa-truck-fast"></i> ผู้รับ (RECEIVER) :
+        </div>
+        <div class="p-3 border rounded bg-light" style="font-size:1.3rem; line-height:1.8; color:#000;">
+          <strong id="lblPcName"></strong><br>
+          <span id="lblPcAddress"></span><br>
+          <strong>เบอร์โทรศัพท์: </strong> <span id="lblPcPhone"></span>
+        </div>
+        <div class="text-end mt-4 text-muted small">ระบบออกใบปะหน้าอัตโนมัติ หจก. โน๊ตบุ๊ค ไอทีอุดร</div>
+      </div>
     </div>
 
     <div id="printInvoiceSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
-       <div class="invoice-box">
-          <div class="row mb-4">
-             <div class="col-7 text-start">
-                <h4 class="fw-bold m-0 text-dark-blue">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
-                <p class="small m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)<br>ที่อยู่: อำเภอเมือง จังหวัดอุดรธานี 41000<br>โทรศัพท์: 042-xxxxxx</p>
-             </div>
-             <div class="col-5 text-end">
-                <h3 class="fw-bold text-orange m-0" id="invTitleDisplay">ใบกำกับภาษี / TAX INVOICE</h3>
-                <p class="m-0 mt-2"><strong>เลขที่เอกสาร:</strong> <span id="invDocId"></span></p>
-                <p class="m-0"><strong>วันที่ออกบิล:</strong> <span id="invDate"></span></p>
-                <p class="m-0"><strong>เงื่อนไขชำระเงิน:</strong> <span id="invTerm">เงินสด</span></p>
-             </div>
+      <div class="invoice-box">
+        <div class="row mb-4">
+          <div class="col-7 text-start">
+            <h4 class="fw-bold m-0 text-dark-blue">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
+            <p class="small m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)<br>ที่อยู่: อำเภอเมือง
+              จังหวัดอุดรธานี 41000<br>โทรศัพท์: 042-xxxxxx</p>
           </div>
-          <div class="p-3 border rounded mb-4 bg-light" style="font-size:0.95rem;">
-             <strong>ข้อมูลลูกค้า / Customer Details :</strong><br>
-             <div class="mt-1"><strong>ชื่อ:</strong> <span id="invCusName"></span></div>
-             <div><strong>ที่อยู่จัดส่ง / สาขา:</strong> <span id="invCusAddress"></span></div>
+          <div class="col-5 text-end">
+            <h3 class="fw-bold text-orange m-0" id="invTitleDisplay">ใบกำกับภาษี / TAX INVOICE</h3>
+            <p class="m-0 mt-2"><strong>เลขที่เอกสาร:</strong> <span id="invDocId"></span></p>
+            <p class="m-0"><strong>วันที่ออกบิล:</strong> <span id="invDate"></span></p>
+            <p class="m-0"><strong>เงื่อนไขชำระเงิน:</strong> <span id="invTerm">เงินสด</span></p>
           </div>
-          <table class="table table-bordered align-middle text-center" style="font-size:0.95rem;">
-             <thead class="table-light"><tr><th style="width:8%;">ลำดับ</th><th>รายการสินค้า / รายละเอียดการขาย</th><th style="width:12%;">จำนวน</th><th style="width:15%;">ราคาต่อหน่วย</th><th style="width:18%;">จำนวนเงิน (บาท)</th></tr></thead>
-             <tbody id="invItemsBody"></tbody>
-          </table>
-          <div class="row justify-content-end text-end mt-3" style="font-size:0.95rem;">
-             <div class="col-md-5">
-                <div class="row py-1">
-                   <div class="col-7 text-muted">รวมเงินคงเหลือ (ก่อน VAT):</div>
-                   <div class="col-5 fw-bold" id="invSubTotal">฿0.00</div>
-                </div>
-                <div class="row py-1">
-                   <div class="col-7 text-danger">ภาษีมูลค่าเพิ่ม VAT (7%):</div>
-                   <div class="col-5 fw-bold text-danger" id="invVat">฿0.00</div>
-                </div>
-                <div class="row py-1 border-top mt-2 pt-2">
-                   <div class="col-7 fw-bold text-primary fs-6">ยอดรวมทั้งสิ้นสุทธิ (Grand Total):</div>
-                   <div class="col-5 fw-bold text-primary double-bottom fs-6" id="invGrandTotal">฿0.00</div>
-                </div>
-             </div>
+        </div>
+        <div class="p-3 border rounded mb-4 bg-light" style="font-size:0.95rem;">
+          <strong>ข้อมูลลูกค้า / Customer Details :</strong><br>
+          <div class="mt-1"><strong>ชื่อ:</strong> <span id="invCusName"></span></div>
+          <div><strong>ที่อยู่จัดส่ง / สาขา:</strong> <span id="invCusAddress"></span></div>
+        </div>
+        <table class="table table-bordered align-middle text-center" style="font-size:0.95rem;">
+          <thead class="table-light">
+            <tr>
+              <th style="width:8%;">ลำดับ</th>
+              <th>รายการสินค้า / รายละเอียดการขาย</th>
+              <th style="width:12%;">จำนวน</th>
+              <th style="width:15%;">ราคาต่อหน่วย</th>
+              <th style="width:18%;">จำนวนเงิน (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="invItemsBody"></tbody>
+        </table>
+        <div class="row justify-content-end text-end mt-3" style="font-size:0.95rem;">
+          <div class="col-md-5">
+            <div class="row py-1">
+              <div class="col-7 text-muted">รวมเงินคงเหลือ (ก่อน VAT):</div>
+              <div class="col-5 fw-bold" id="invSubTotal">฿0.00</div>
+            </div>
+            <div class="row py-1">
+              <div class="col-7 text-danger">ภาษีมูลค่าเพิ่ม VAT (7%):</div>
+              <div class="col-5 fw-bold text-danger" id="invVat">฿0.00</div>
+            </div>
+            <div class="row py-1 border-top mt-2 pt-2">
+              <div class="col-7 fw-bold text-primary fs-6">ยอดรวมทั้งสิ้นสุทธิ (Grand Total):</div>
+              <div class="col-5 fw-bold text-primary double-bottom fs-6" id="invGrandTotal">฿0.00</div>
+            </div>
           </div>
-          <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #cbd5e1;">
-             <div class="col-4"><br><br>...................................................<br>ผู้รับเงิน / สินค้า</div>
-             <div class="col-4"></div>
-             <div class="col-4"><br><br>...................................................<br>ผู้รับมอบอำนาจ / ผู้จัดการ</div>
+        </div>
+        <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #cbd5e1;">
+          <div class="col-4"><br><br>...................................................<br>ผู้รับเงิน / สินค้า</div>
+          <div class="col-4"></div>
+          <div class="col-4"><br><br>...................................................<br>ผู้รับมอบอำนาจ / ผู้จัดการ
           </div>
-       </div>
+        </div>
+      </div>
     </div>
-    
+
     <div id="printTxReportSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
-       <div class="invoice-box" style="max-width: 900px;">
-          <div class="text-center mb-4">
-             <h4 class="fw-bold text-dark-blue">รายงานบัญชีรายรับ - รายจ่าย</h4>
-             <h5 class="fw-bold">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h5>
-             <p class="m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)</p>
-             <p class="m-0 fw-bold" id="txPrintMonth">ประจำเดือน: ...</p>
+      <div class="invoice-box" style="max-width: 900px;">
+        <div class="text-center mb-4">
+          <h4 class="fw-bold text-dark-blue">รายงานบัญชีรายรับ - รายจ่าย</h4>
+          <h5 class="fw-bold">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h5>
+          <p class="m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)</p>
+          <p class="m-0 fw-bold" id="txPrintMonth">ประจำเดือน: ...</p>
+        </div>
+        <table class="table table-bordered align-middle text-center" style="font-size:0.9rem;">
+          <thead class="table-light">
+            <tr>
+              <th style="width:8%;">ลำดับ</th>
+              <th style="width:15%;">วัน/เดือน/ปี</th>
+              <th class="text-start">รายการ (หมวดหมู่ / อ้างอิง)</th>
+              <th style="width:18%;">รายรับ (บาท)</th>
+              <th style="width:18%;">รายจ่าย (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="txPrintBody"></tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="3" class="text-end">รวมยอดสุทธิประจำงวด (Total)</td>
+              <td class="text-success" id="txPrintTotalIncome">0.00</td>
+              <td class="text-danger" id="txPrintTotalExpense">0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div class="row mt-4">
+          <div class="col-12 text-end">
+            <h5 class="fw-bold">ยอดยกไป (คงเหลือสุทธิ): <span id="txPrintBalance" class="text-primary">0.00</span> บาท
+            </h5>
           </div>
-          <table class="table table-bordered align-middle text-center" style="font-size:0.9rem;">
-             <thead class="table-light">
-                <tr>
-                   <th style="width:8%;">ลำดับ</th>
-                   <th style="width:15%;">วัน/เดือน/ปี</th>
-                   <th class="text-start">รายการ (หมวดหมู่ / อ้างอิง)</th>
-                   <th style="width:18%;">รายรับ (บาท)</th>
-                   <th style="width:18%;">รายจ่าย (บาท)</th>
-                </tr>
-             </thead>
-             <tbody id="txPrintBody"></tbody>
-             <tfoot class="table-light fw-bold">
-                <tr>
-                   <td colspan="3" class="text-end">รวมยอดสุทธิประจำงวด (Total)</td>
-                   <td class="text-success" id="txPrintTotalIncome">0.00</td>
-                   <td class="text-danger" id="txPrintTotalExpense">0.00</td>
-                </tr>
-             </tfoot>
-          </table>
-          <div class="row mt-4">
-             <div class="col-12 text-end">
-               <h5 class="fw-bold">ยอดยกไป (คงเหลือสุทธิ): <span id="txPrintBalance" class="text-primary">0.00</span> บาท</h5>
-             </div>
+        </div>
+        <div class="row mt-5 text-center small pt-4">
+          <div class="col-4"><br><br>...................................................<br>ผู้จัดทำบัญชี / รับเงิน
           </div>
-          <div class="row mt-5 text-center small pt-4">
-             <div class="col-4"><br><br>...................................................<br>ผู้จัดทำบัญชี / รับเงิน</div>
-             <div class="col-4"></div>
-             <div class="col-4"><br><br>...................................................<br>ผู้ตรวจสอบ / ผู้จัดการ</div>
-          </div>
-       </div>
+          <div class="col-4"></div>
+          <div class="col-4"><br><br>...................................................<br>ผู้ตรวจสอบ / ผู้จัดการ</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -456,21 +907,61 @@
     // ==========================================
     // ตั้งค่าเชื่อมต่อ Supabase Database
     // ==========================================
-    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co'; // ใส่ URL ของคุณ
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4'; // ใส่ Anon Key ของคุณ
+    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let globalProducts = [], globalSales = [], globalTransactions = [];
     let mySalesChart = null;
     let myProfitChart = null;
 
-    // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY
+    // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY (สำหรับแสดงผล)
     function formatDateToTH(dateString) {
-      if(!dateString) return "";
-      if(dateString.includes('/')) return dateString;
+      if (!dateString) return "";
+      if (dateString.includes('/')) return dateString;
       let parts = dateString.split('-');
-      if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
       return dateString;
+    }
+
+    // Helper: แปลงวันที่ DD/MM/YYYY เป็น YYYY-MM-DD (สำหรับบันทึก DB)
+    function formatDateToDB(dateString) {
+      if (!dateString) return null;
+      if (dateString.includes('-') && !dateString.includes('/')) return dateString; // already YYYY-MM-DD
+      let parts = dateString.split('/');
+      if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return dateString;
+    }
+
+    function logout() {
+      Swal.fire({
+        title: 'ออกจากระบบ',
+        text: 'คุณต้องการออกจากระบบใช่หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, ออกจากระบบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          localStorage.removeItem('isLoggedIn');
+          window.location.href = 'login.html';
+        }
+      });
+    }
+
+    // Helper: map Supabase snake_case fields to local camelCase
+    // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
+    // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
+    function mapProduct(p) {
+      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at };
+    }
+    function mapSale(s) {
+      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total) };
+    }
+    function mapTransaction(t) {
+      return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note };
     }
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
@@ -478,11 +969,11 @@
     function showPage(pageId, element) {
       document.querySelectorAll('.page-section').forEach(p => p.classList.add('d-none'));
       document.getElementById('page-' + pageId).classList.remove('d-none');
-      if(element) {
+      if (element) {
         document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
         element.classList.add('active');
       }
-      if(window.innerWidth <= 768) toggleSidebar();
+      if (window.innerWidth <= 768) toggleSidebar();
     }
 
     async function refreshAllData() {
@@ -492,7 +983,7 @@
         mFilter = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, '0');
         document.getElementById('monthFilter').value = mFilter;
       }
-      
+
       try {
         // ดึงข้อมูลทั้งหมดจาก Supabase พร้อมกัน
         const [prodRes, salesRes, txRes] = await Promise.all([
@@ -505,10 +996,10 @@
         if (salesRes.error) throw salesRes.error;
         if (txRes.error) throw txRes.error;
 
-        globalProducts = prodRes.data || [];
-        globalSales = salesRes.data || [];
-        globalTransactions = txRes.data || [];
-        
+        globalProducts = (prodRes.data || []).map(mapProduct);
+        globalSales = (salesRes.data || []).map(mapSale);
+        globalTransactions = (txRes.data || []).map(mapTransaction);
+
         renderDashboard();
         renderViewProducts();
         renderManageProducts();
@@ -524,58 +1015,66 @@
     function renderDashboard() {
       let filter = document.getElementById('monthFilter').value;
       let filterParts = filter.split('-');
-      let targetMonth = filterParts[1] + "/" + filterParts[0]; 
+      let targetMonth = filterParts[1] + "/" + filterParts[0];
       let targetYear = filterParts[0];
 
       let mSales = 0, mProfit = 0, ySales = 0, totalStock = 0, invValue = 0;
       let mQty = 0;
-      let brandSales = {}; 
+      let brandSales = {};
       let recentHtml = '', lowStockHtml = '';
-      
-      let dailySales = {};
-      let dailyProfit = {};
+
+      let monthlySales = {};
+      let yearlySales = {};
 
       function getBrandByPid(pid) {
-         let prod = globalProducts.find(p => p.id === pid);
-         return prod ? prod.brand : 'ไม่ระบุ';
+        let prod = globalProducts.find(p => p.id === pid);
+        return prod ? prod.brand : 'ไม่ระบุ';
       }
 
-      let lowStockCount = 0; 
+
+
+      let lowStockCount = 0;
       globalProducts.forEach(p => {
         totalStock += p.stock;
         invValue += (p.cost * p.stock);
-        if(p.stock < 3 && lowStockCount < 10) {
+        if (p.stock > 0 && p.stock < 3 && lowStockCount < 10) {
           lowStockHtml += `<tr><td>${p.name}</td><td class="text-center text-danger fw-bold">${p.stock} ชิ้น</td></tr>`;
           lowStockCount++;
         }
       });
 
       let count = 0;
-      // เรียงจากใหม่ไปเก่า
-      let sortedSales = [...globalSales].sort((a, b) => b.receiptId.localeCompare(a.receiptId));
+      // เรียงจากใหม่ไปเก่า โดยใช้ createdAt
+      let sortedSales = [...globalSales].sort((a, b) => {
+        let dateA = new Date(a.createdAt).getTime();
+        let dateB = new Date(b.createdAt).getTime();
+        if (isNaN(dateA)) dateA = 0;
+        if (isNaN(dateB)) dateB = 0;
+        return dateB - dateA;
+      });
 
       sortedSales.forEach(s => {
         let dParts = s.date.split('/');
         let sDay = dParts[0];
         let sMonth = dParts[1] + "/" + dParts[2];
         let sYear = dParts[2];
-        
-        if(sMonth === targetMonth) {
+
+        if (sMonth === targetMonth) {
           mSales += Number(s.totalSales);
           mProfit += Number(s.profit);
-          mQty += Number(s.qty); 
-          
+          mQty += Number(s.qty);
+
           let brand = getBrandByPid(s.productId);
           brandSales[brand] = (brandSales[brand] || 0) + s.qty;
-          
-          dailySales[sDay] = (dailySales[sDay] || 0) + Number(s.totalSales);
-          dailyProfit[sDay] = (dailyProfit[sDay] || 0) + Number(s.profit);
         }
-        if(sYear === targetYear) {
+        if (sYear === targetYear) {
           ySales += Number(s.totalSales);
+          let mNum = dParts[1];
+          monthlySales[mNum] = (monthlySales[mNum] || 0) + Number(s.totalSales);
         }
+        yearlySales[sYear] = (yearlySales[sYear] || 0) + Number(s.totalSales);
 
-        if(count < 5) {
+        if (count < 5) {
           recentHtml += `<tr><td>${s.date}</td><td class="text-start text-truncate" style="max-width:180px;">${s.productName}</td><td class="text-orange fw-bold">฿${Number(s.totalSales).toLocaleString()}</td><td class="text-success">฿${Number(s.profit).toLocaleString()}</td></tr>`;
           count++;
         }
@@ -583,11 +1082,11 @@
 
       let bestBrand = "-";
       let maxBrandQty = 0;
-      for(let b in brandSales) {
-         if(brandSales[b] > maxBrandQty) {
-            maxBrandQty = brandSales[b];
-            bestBrand = b;
-         }
+      for (let b in brandSales) {
+        if (brandSales[b] > maxBrandQty) {
+          maxBrandQty = brandSales[b];
+          bestBrand = b;
+        }
       }
 
       document.getElementById('dashSales').innerText = "฿" + mSales.toLocaleString();
@@ -598,29 +1097,29 @@
       document.getElementById('dashStock').innerText = totalStock + " ชิ้น";
       document.getElementById('dashInventoryValue').innerText = "฿" + invValue.toLocaleString();
       document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">ไม่มีรายการขายในเดือนนี้</td></tr>';
-      
+
       if (lowStockCount > 0) {
-         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
-         document.getElementById('dashLowStock').innerHTML = lowStockHtml;
+        if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
+        document.getElementById('dashLowStock').innerHTML = lowStockHtml;
       } else {
-         document.getElementById('dashLowStock').innerHTML = '<tr><td colspan="2" class="text-success text-center">สินค้าเพียงพอทุกรายการ</td></tr>';
+        document.getElementById('dashLowStock').innerHTML = '<tr><td colspan="2" class="text-success text-center">สินค้าเพียงพอทุกรายการ</td></tr>';
       }
 
-      renderCharts(filterParts[0], filterParts[1], dailySales, dailyProfit);
+      renderCharts(targetYear, monthlySales, yearlySales);
     }
 
-    function renderCharts(year, month, dailySales, dailyProfit) {
-      let daysInMonth = new Date(year, month, 0).getDate();
-      let labels = [];
-      let salesData = [];
-      let profitData = [];
-
-      for (let i = 1; i <= daysInMonth; i++) {
-        let dayStr = ("0" + i).slice(-2);
-        labels.push(dayStr);
-        salesData.push(dailySales[dayStr] || 0);
-        profitData.push(dailyProfit[dayStr] || 0);
+    function renderCharts(targetYear, monthlySales, yearlySales) {
+      // Data for Monthly Sales
+      let monthLabels = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      let mSalesData = [];
+      for (let i = 1; i <= 12; i++) {
+        let mStr = ("0" + i).slice(-2);
+        mSalesData.push(monthlySales[mStr] || 0);
       }
+
+      // Data for Yearly Sales
+      let yearLabels = Object.keys(yearlySales).sort();
+      let ySalesData = yearLabels.map(y => yearlySales[y]);
 
       const ctxSales = document.getElementById('salesChart');
       const ctxProfit = document.getElementById('profitChart');
@@ -631,8 +1130,8 @@
       mySalesChart = new Chart(ctxSales, {
         type: 'bar',
         data: {
-          labels: labels,
-          datasets: [{ label: 'ยอดขาย (บาท)', data: salesData, backgroundColor: 'rgba(249, 115, 22, 0.8)', borderRadius: 4 }]
+          labels: monthLabels,
+          datasets: [{ label: 'ยอดขายรายเดือน (บาท)', data: mSalesData, backgroundColor: 'rgba(249, 115, 22, 0.8)', borderRadius: 4 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
@@ -640,41 +1139,123 @@
       myProfitChart = new Chart(ctxProfit, {
         type: 'line',
         data: {
-          labels: labels,
-          datasets: [{ label: 'กำไร (บาท)', data: profitData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
+          labels: yearLabels,
+          datasets: [{ label: 'ยอดขายรายปี (บาท)', data: ySalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
     }
 
     function renderViewProducts() {
-      let html = globalProducts.map(p => `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger':'text-dark'}">${p.stock}</span> เครื่อง</td></tr>`).join('');
-      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="5" class="text-muted">ไม่มีรายการสินค้าในระบบ</td></tr>';
+      let filter = document.getElementById('monthFilter').value;
+      let brandFilterEl = document.getElementById('viewBrandFilter');
+      let brandFilter = brandFilterEl ? brandFilterEl.value : "";
+
+      let filteredProducts = globalProducts;
+      if (filter) {
+        filteredProducts = filteredProducts.filter(p => {
+          if (!p.updatedAt) return false;
+          let dateOnly = p.updatedAt.split('T')[0];
+          return dateOnly.startsWith(filter);
+        });
+      }
+
+      if (brandFilterEl) {
+        let currentBrand = brandFilterEl.value;
+        let brandSet = new Set();
+        globalProducts.forEach(p => brandSet.add(p.brand));
+        let brandOptionsHtml = '<option value="">-- ยี่ห้อทั้งหมด --</option>';
+        brandSet.forEach(b => { if (b) brandOptionsHtml += `<option value="${b}">${b}</option>`; });
+        brandFilterEl.innerHTML = brandOptionsHtml;
+        brandFilterEl.value = currentBrand;
+      }
+
+      if (brandFilter) {
+        filteredProducts = filteredProducts.filter(p => p.brand === brandFilter);
+      }
+
+      filteredProducts.sort((a, b) => {
+        if (a.stock > 0 && b.stock <= 0) return -1;
+        if (a.stock <= 0 && b.stock > 0) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      let html = filteredProducts.map(p => {
+        let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
+        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td></tr>`;
+      }).join('');
+      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="6" class="text-muted">ไม่มีรายการสินค้าในระบบตามเงื่อนไขที่เลือก</td></tr>';
     }
 
     function renderManageProducts() {
-      let html = globalProducts.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td>${p.stock}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock})"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('');
-      document.getElementById('productData').innerHTML = html || '<tr><td colspan="6" class="text-muted">ไม่มีสินค้า</td></tr>';
+      let dateFilterEl = document.getElementById('manageDateFilter');
+      let brandFilterEl = document.getElementById('manageBrandFilter');
+      let stockFilterEl = document.getElementById('manageStockFilter');
+
+      // Sync global month filter on first load if empty
+      if (dateFilterEl && !dateFilterEl.value && !dateFilterEl.hasAttribute('data-init')) {
+        dateFilterEl.value = document.getElementById('monthFilter').value;
+        dateFilterEl.setAttribute('data-init', 'true');
+      }
+
+      let dateFilter = dateFilterEl ? dateFilterEl.value : "";
+      let brandFilter = brandFilterEl ? brandFilterEl.value : "";
+      let stockFilter = stockFilterEl ? stockFilterEl.value : "";
+
+      let filteredProducts = globalProducts;
+      if (dateFilter) {
+        filteredProducts = filteredProducts.filter(p => {
+          if (!p.updatedAt) return false;
+          let dateOnly = p.updatedAt.split('T')[0];
+          return dateOnly.startsWith(dateFilter);
+        });
+      }
+
+      if (brandFilterEl) {
+        let currentBrand = brandFilterEl.value;
+        let brandSet = new Set();
+        globalProducts.forEach(p => brandSet.add(p.brand));
+        let brandOptionsHtml = '<option value="">-- ยี่ห้อทั้งหมด --</option>';
+        brandSet.forEach(b => { if (b) brandOptionsHtml += `<option value="${b}">${b}</option>`; });
+        brandFilterEl.innerHTML = brandOptionsHtml;
+        brandFilterEl.value = currentBrand;
+      }
+
+      if (brandFilter) {
+        filteredProducts = filteredProducts.filter(p => p.brand === brandFilter);
+      }
+
+      if (stockFilter === 'in_stock') {
+        filteredProducts = filteredProducts.filter(p => p.stock > 0);
+      } else if (stockFilter === 'out_of_stock') {
+        filteredProducts = filteredProducts.filter(p => p.stock === 0);
+      }
+
+      let html = filteredProducts.map(p => {
+        let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
+        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock})"><i class="fa-solid fa-pen"></i></button></td></tr>`;
+      }).join('');
+      document.getElementById('productData').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
 
     function renderSalesTab() {
       let selectHtml = '<option value="">-- เลือกรายการสินค้าเพื่อทำการตัดสต็อก --</option>';
       let brandSet = new Set();
       globalProducts.forEach(p => {
-        if(p.stock > 0) {
+        if (p.stock > 0) {
           selectHtml += `<option value="${p.id}" data-price="${p.actualPrice}">${p.name} (คงเหลือ: ${p.stock} | แบรนด์: ${p.brand})</option>`;
         }
         brandSet.add(p.brand);
       });
       document.getElementById('saleProduct').innerHTML = selectHtml;
-      
+
       let filterBrandHtml = '<option value="">แบรนด์สินค้าทั้งหมด</option>';
-      brandSet.forEach(b => { if(b) filterBrandHtml += `<option value="${b}">${b}</option>`; });
+      brandSet.forEach(b => { if (b) filterBrandHtml += `<option value="${b}">${b}</option>`; });
       document.getElementById('filterBrand').innerHTML = filterBrandHtml;
-      
-      document.getElementById('saleProduct').onchange = function() {
+
+      document.getElementById('saleProduct').onchange = function () {
         let opt = this.options[this.selectedIndex];
-        if(opt && opt.value) {
+        if (opt && opt.value) {
           document.getElementById('saleCustomPrice').value = opt.getAttribute('data-price');
           calcVAT();
         }
@@ -686,7 +1267,14 @@
       let b = document.getElementById('filterBrand').value.toLowerCase();
       let s = document.getElementById('filterModel').value.toLowerCase();
       let filtered = globalProducts.filter(p => (b === "" || p.brand.toLowerCase() === b) && (s === "" || p.name.toLowerCase().includes(s)));
-      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger':'bg-success'}">${p.stock}</span></td></tr>`).join('');
+
+      filtered.sort((a, b) => {
+        if (a.stock > 0 && b.stock <= 0) return -1;
+        if (a.stock <= 0 && b.stock > 0) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger' : 'bg-success'}">${p.stock}</span></td></tr>`).join('');
     }
 
     function calcVAT() {
@@ -701,14 +1289,14 @@
 
     async function submitSale(e) {
       e.preventDefault();
-      
+
       let pId = document.getElementById('saleProduct').value;
-      if(!pId) { Swal.fire('เตือน', 'กรุณาเลือกสินค้าก่อนบันทึกขาย', 'warning'); return; }
-      
+      if (!pId) { Swal.fire('เตือน', 'กรุณาเลือกสินค้าก่อนบันทึกขาย', 'warning'); return; }
+
       let qty = Number(document.getElementById('saleQty').value);
       let product = globalProducts.find(p => p.id === pId);
-      
-      if(qty > product.stock) { Swal.fire('เตือน', 'สินค้าคงเหลือไม่พอขาย!', 'warning'); return; }
+
+      if (qty > product.stock) { Swal.fire('เตือน', 'สินค้าคงเหลือไม่พอขาย!', 'warning'); return; }
 
       let customPrice = Number(document.getElementById('saleCustomPrice').value);
       let subTotal = customPrice * qty;
@@ -718,34 +1306,34 @@
       let totalSales = subTotal + vat;
 
       let receiptId = "INV-" + Date.now();
-      
+
       let saleData = {
-        receiptId: receiptId,
-        date: formatDateToTH(document.getElementById('saleDate').value),
-        productId: pId,
-        productName: product.name,
-        customPrice: customPrice,
+        invoice_id: receiptId,
+        date: document.getElementById('saleDate').value,
+        product_id: pId,
+        product_name: product.name,
         qty: qty,
-        subTotal: subTotal,
-        totalSales: totalSales,
-        totalCost: totalCost,
+        sub_total: subTotal,
+        total_cost: totalCost,
         profit: profit,
-        cusName: document.getElementById('saleCusName').value || "-",
+        vat: vat,
+        grand_total: totalSales,
+        cus_name: document.getElementById('saleCusName').value || "-",
         address: document.getElementById('saleAddress').value || "-"
       };
 
       Swal.showLoading();
-      
+
       try {
         // 1. บันทึกการขาย
         const { error: saleErr } = await supabaseClient.from('sales').insert([saleData]);
-        if(saleErr) throw saleErr;
+        if (saleErr) throw saleErr;
 
         // 2. ตัดสต็อก
         const { error: stockErr } = await supabaseClient.from('products')
           .update({ stock: product.stock - qty })
           .eq('id', pId);
-        if(stockErr) throw stockErr;
+        if (stockErr) throw stockErr;
 
         Swal.fire('สำเร็จ!', 'บันทึกการขายและตัดสต็อกเรียบร้อย', 'success');
         document.getElementById('formSale').reset();
@@ -760,7 +1348,7 @@
     function renderReportsTab() {
       let filter = document.getElementById('monthFilter').value;
       let targetMonth = filter.split('-')[1] + "/" + filter.split('-')[0];
-      
+
       let totalQty = 0, totalCost = 0, totalSub = 0, totalProfit = 0;
       let historyHtml = '';
 
@@ -769,15 +1357,15 @@
 
       sortedSales.forEach(s => {
         let sMonth = s.date.split('/')[1] + "/" + s.date.split('/')[2];
-        if(sMonth === targetMonth) {
-           totalQty += Number(s.qty);
-           totalCost += Number(s.totalCost);
-           totalSub += Number(s.subTotal);
-           totalProfit += Number(s.profit);
-           
-           let saleStr = JSON.stringify(s).replace(/'/g, "\\'");
+        if (sMonth === targetMonth) {
+          totalQty += Number(s.qty);
+          totalCost += Number(s.totalCost);
+          totalSub += Number(s.subTotal);
+          totalProfit += Number(s.profit);
 
-           historyHtml += `<tr>
+          let saleStr = JSON.stringify(s).replace(/'/g, "\\'");
+
+          historyHtml += `<tr>
               <td><span class="badge bg-dark">${s.receiptId}</span></td>
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
@@ -806,7 +1394,7 @@
       document.getElementById('qtDocId').value = sale.receiptId;
       document.getElementById('qtCusName').value = sale.cusName;
       document.getElementById('qtCusAddress').value = sale.address;
-      
+
       let tbody = document.getElementById('qtTableBody');
       tbody.innerHTML = `<tr>
          <td>1</td>
@@ -824,9 +1412,9 @@
       document.getElementById('pcName').value = sale.cusName;
       document.getElementById('pcAddress').value = sale.address !== "-" ? sale.address : "";
       document.getElementById('pcPhone').value = "";
-      
+
       const triggerTab = document.querySelector('#reportTabs button[data-bs-target="#tab-parcel"]');
-      if(triggerTab) triggerTab.click();
+      if (triggerTab) triggerTab.click();
       Swal.fire('ดึงข้อมูลสำเร็จ', 'ดึงข้อมูลที่อยู่ลูกค้าเข้าไปยังแท็บใบปะหน้าพัสดุเรียบร้อย', 'success');
     }
 
@@ -834,21 +1422,21 @@
       document.getElementById('lblPcName').innerText = document.getElementById('pcName').value;
       document.getElementById('lblPcAddress').innerText = document.getElementById('pcAddress').value;
       document.getElementById('lblPcPhone').innerText = document.getElementById('pcPhone').value;
-      
+
       document.getElementById('printParcelSection').classList.remove('d-none');
       window.print();
       setTimeout(() => { document.getElementById('printParcelSection').classList.add('d-none'); }, 1000);
     }
 
-    function openInvoiceCreator() { 
-      document.getElementById('invoiceCreatorCard').style.display = 'block'; 
+    function openInvoiceCreator() {
+      document.getElementById('invoiceCreatorCard').style.display = 'block';
       let today = new Date().toISOString().split('T')[0];
       document.getElementById('qtDate').value = today;
-      if(document.getElementById('qtTableBody').children.length === 0) addInvoiceRow();
+      if (document.getElementById('qtTableBody').children.length === 0) addInvoiceRow();
     }
-    
+
     function closeInvoiceCreator() { document.getElementById('invoiceCreatorCard').style.display = 'none'; }
-    
+
     function addInvoiceRow() {
       let tbody = document.getElementById('qtTableBody');
       let idx = tbody.children.length + 1;
@@ -869,12 +1457,12 @@
       let rows = document.querySelectorAll('#qtTableBody tr');
       let totalSub = 0;
       rows.forEach((row, i) => {
-         row.children[0].innerText = i + 1;
-         let qty = Number(row.querySelector('.row-qty').value) || 0;
-         let prc = Number(row.querySelector('.row-price').value) || 0;
-         let amt = qty * prc;
-         totalSub += amt;
-         row.querySelector('.row-total').innerText = "฿" + amt.toLocaleString();
+        row.children[0].innerText = i + 1;
+        let qty = Number(row.querySelector('.row-qty').value) || 0;
+        let prc = Number(row.querySelector('.row-price').value) || 0;
+        let amt = qty * prc;
+        totalSub += amt;
+        row.querySelector('.row-total').innerText = "฿" + amt.toLocaleString();
       });
     }
 
@@ -886,216 +1474,317 @@
       document.getElementById('invTerm').innerText = document.getElementById('qtPaymentTerm').value;
       document.getElementById('invCusName').innerText = document.getElementById('qtCusName').value || 'ลูกค้าทั่วไป';
       document.getElementById('invCusAddress').innerText = document.getElementById('qtCusAddress').value || '-';
-      
+
       let rows = document.querySelectorAll('#qtTableBody tr');
       let html = '', subTotal = 0;
       rows.forEach((row, i) => {
-         let desc = row.querySelector('.row-desc').value;
-         let qty = Number(row.querySelector('.row-qty').value) || 0;
-         let prc = Number(row.querySelector('.row-price').value) || 0;
-         let amt = qty * prc;
-         subTotal += amt;
-         html += `<tr><td>${i+1}</td><td class="text-start">${desc}</td><td>${qty}</td><td>฿${prc.toLocaleString()}</td><td>฿${amt.toLocaleString()}</td></tr>`;
+        let desc = row.querySelector('.row-desc').value;
+        let qty = Number(row.querySelector('.row-qty').value) || 0;
+        let prc = Number(row.querySelector('.row-price').value) || 0;
+        let amt = qty * prc;
+        subTotal += amt;
+        html += `<tr><td>${i + 1}</td><td class="text-start">${desc}</td><td>${qty}</td><td>฿${prc.toLocaleString()}</td><td>฿${amt.toLocaleString()}</td></tr>`;
       });
-      
+
       let vat = subTotal * 0.07;
       document.getElementById('invItemsBody').innerHTML = html;
       document.getElementById('invSubTotal').innerText = "฿" + subTotal.toLocaleString();
       document.getElementById('invVat').innerText = "฿" + vat.toLocaleString();
       document.getElementById('invGrandTotal').innerText = "฿" + (subTotal + vat).toLocaleString();
-      
+
       document.getElementById('printInvoiceSection').classList.remove('d-none');
       window.print();
       setTimeout(() => { document.getElementById('printInvoiceSection').classList.add('d-none'); }, 1000);
     }
 
-    function renderTransactionsTable() {
-       let filter = document.getElementById('monthFilter').value;
-       let targetMonth = filter.split('-')[1] + "/" + filter.split('-')[0];
-       
-       let html = '';
-       // เรียงจากใหม่ไปเก่า
-       let sortedTx = [...globalTransactions].sort((a, b) => b.id.localeCompare(a.id));
+    function getAllTransactions() {
+      let combined = [];
+      let manualIds = new Set(globalTransactions.map(t => t.id));
 
-       sortedTx.forEach(t => {
-          let tMonth = t.date.split('/')[1] + "/" + t.date.split('/')[2];
-          if(tMonth === targetMonth) {
-              html += `<tr>
-                 <td><span class="badge bg-dark">${t.id}</span></td>
+      globalTransactions.forEach(t => {
+        if (t.note !== 'DELETED_AUTO') {
+          combined.push({
+            id: t.id,
+            date: t.date || "01/01/2000",
+            type: t.type,
+            category: t.category,
+            amount: t.amount,
+            note: t.note,
+            source: 'manual'
+          });
+        }
+      });
+
+      globalSales.forEach(s => {
+        if (!manualIds.has(s.receiptId)) {
+          combined.push({
+            id: s.receiptId,
+            date: s.date || "01/01/2000",
+            type: 'รายรับ',
+            category: 'ขายสินค้า: ' + s.productName,
+            amount: s.totalSales,
+            note: 'ลูกค้า: ' + s.cusName + ' (จำนวน ' + s.qty + ' เครื่อง)',
+            source: 'sale'
+          });
+        }
+      });
+
+      globalProducts.forEach(p => {
+        let soldQty = 0;
+        globalSales.forEach(s => {
+          if (s.productId === p.id) {
+            soldQty += Number(s.qty);
+          }
+        });
+        let totalImported = Number(p.stock) + soldQty;
+        if (totalImported > 0) {
+          let impId = 'IMP-' + p.id;
+          if (!manualIds.has(impId)) {
+            let d = p.updatedAt ? p.updatedAt.split('T')[0] : "2000-01-01";
+            combined.push({
+              id: impId,
+              date: formatDateToTH(d),
+              type: 'รายจ่าย',
+              category: 'ซื้อสินค้าเข้า: ' + p.name,
+              amount: Number(p.cost) * totalImported,
+              note: 'จำนวนจัดซื้อรวม ' + totalImported + ' เครื่อง (อ้างอิงจากคลังและยอดขาย)',
+              source: 'import'
+            });
+          }
+        }
+      });
+
+      return combined;
+    }
+
+    function renderTransactionsTable() {
+      let filter = document.getElementById('monthFilter').value;
+      let targetMonth = filter.split('-')[1] + "/" + filter.split('-')[0];
+
+      let html = '';
+      let allTx = getAllTransactions();
+      // เรียงจากใหม่ไปเก่า
+      let sortedTx = allTx.sort((a, b) => {
+        let dateA = a.date.split('/').reverse().join('');
+        let dateB = b.date.split('/').reverse().join('');
+        if (dateA !== dateB) return dateB.localeCompare(dateA);
+        return b.id.localeCompare(a.id);
+      });
+
+      sortedTx.forEach(t => {
+        let parts = t.date.split('/');
+        let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+        if (tMonth === targetMonth) {
+          let actionButtons = `
+            <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
+          `;
+          if (t.source !== 'manual') {
+            actionButtons += ` <span class="badge bg-secondary small ms-1">Auto</span>`;
+          }
+
+          html += `<tr>
+                 <td><span class="badge bg-dark" style="font-size:0.75rem;">${t.id}</span></td>
                  <td>${t.date}</td>
-                 <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success':'bg-danger'}">${t.type}</span></td>
+                 <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
                  <td class="text-start fw-medium">${t.category}</td>
                  <td class="fw-bold">฿${Number(t.amount).toLocaleString()}</td>
-                 <td class="text-start text-muted">${t.note || '-'}</td>
-                 <td>
-                    <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')"><i class="fa-solid fa-trash"></i></button>
-                 </td>
+                 <td class="text-start text-muted" style="font-size:0.85rem;">${t.note || '-'}</td>
+                 <td>${actionButtons}</td>
               </tr>`;
-          }
-       });
-       document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
+        }
+      });
+      document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
     }
 
     function printTxReport() {
-       let filter = document.getElementById('monthFilter').value;
-       let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
-       
-       document.getElementById('txPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
-       
-       let html = '';
-       let totalIncome = 0;
-       let totalExpense = 0;
-       let count = 1;
-       
-       let sortedTx = [...globalTransactions].sort((a, b) => a.id.localeCompare(b.id)); // พิมพ์เรียงตามเวลาเก่าไปใหม่
+      let filter = document.getElementById('monthFilter').value;
+      let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
 
-       sortedTx.forEach(t => {
-          let tMonth = t.date.split('/')[1] + "/" + t.date.split('/')[2];
-          if (filter && tMonth !== targetMonth) return;
+      document.getElementById('txPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
 
-          let inc = t.type === 'รายรับ' ? Number(t.amount) : 0;
-          let exp = t.type === 'รายจ่าย' ? Number(t.amount) : 0;
-          
-          totalIncome += inc;
-          totalExpense += exp;
-          
-          html += `<tr>
+      let html = '';
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let count = 1;
+
+      let allTx = getAllTransactions();
+      // พิมพ์เรียงตามเวลาเก่าไปใหม่
+      let sortedTx = allTx.sort((a, b) => {
+        let dateA = a.date.split('/').reverse().join('');
+        let dateB = b.date.split('/').reverse().join('');
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.id.localeCompare(b.id);
+      });
+
+      sortedTx.forEach(t => {
+        let parts = t.date.split('/');
+        let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+        if (filter && tMonth !== targetMonth) return;
+
+        let inc = t.type === 'รายรับ' ? Number(t.amount) : 0;
+        let exp = t.type === 'รายจ่าย' ? Number(t.amount) : 0;
+
+        totalIncome += inc;
+        totalExpense += exp;
+
+        html += `<tr>
              <td>${count++}</td>
              <td>${t.date}</td>
-             <td class="text-start">${t.category} ${t.note ? ' <small class="text-muted">('+t.note+')</small>' : ''}</td>
-             <td class="${inc > 0 ? 'text-success' : ''}">${inc > 0 ? inc.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'}</td>
-             <td class="${exp > 0 ? 'text-danger' : ''}">${exp > 0 ? exp.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'}</td>
+             <td class="text-start">${t.category} ${t.note ? ' <small class="text-muted">(' + t.note + ')</small>' : ''}</td>
+             <td class="${inc > 0 ? 'text-success' : ''}">${inc > 0 ? inc.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+             <td class="${exp > 0 ? 'text-danger' : ''}">${exp > 0 ? exp.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
           </tr>`;
-       });
-       
-       if(html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
-       
-       document.getElementById('txPrintBody').innerHTML = html;
-       document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2});
-       document.getElementById('txPrintTotalExpense').innerText = totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2});
-       
-       let balance = totalIncome - totalExpense;
-       let balElem = document.getElementById('txPrintBalance');
-       balElem.innerText = balance.toLocaleString(undefined, {minimumFractionDigits: 2});
-       balElem.className = balance >= 0 ? 'text-primary' : 'text-danger';
-       
-       document.getElementById('printTxReportSection').classList.remove('d-none');
-       window.print();
-       setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
+      });
+
+      if (html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
+
+      document.getElementById('txPrintBody').innerHTML = html;
+      document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('txPrintTotalExpense').innerText = totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+      let balance = totalIncome - totalExpense;
+      let balElem = document.getElementById('txPrintBalance');
+      balElem.innerText = balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      balElem.className = balance >= 0 ? 'text-primary' : 'text-danger';
+
+      document.getElementById('printTxReportSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
     }
 
     async function submitTransaction(e) {
-       e.preventDefault();
-       let id = document.getElementById('tx_id').value;
-       let txData = {
-         date: formatDateToTH(document.getElementById('tx_date').value),
-         type: document.getElementById('tx_type').value,
-         category: document.getElementById('tx_category').value,
-         amount: Number(document.getElementById('tx_amount').value),
-         note: document.getElementById('tx_note').value
-       };
-       
-       Swal.showLoading();
-       try {
-         if (id) {
+      e.preventDefault();
+      let id = document.getElementById('tx_id').value;
+      let txData = {
+        date: document.getElementById('tx_date').value,
+        type: document.getElementById('tx_type').value,
+        category: document.getElementById('tx_category').value,
+        amount: Number(document.getElementById('tx_amount').value),
+        note: document.getElementById('tx_note').value
+      };
+
+      Swal.showLoading();
+      try {
+        if (id) {
+          let exists = globalTransactions.find(t => t.id === id);
+          if (exists) {
             // Update
-            const { error } = await supabaseClient.from('transactions').update(txData).eq('id', id);
-            if(error) throw error;
-         } else {
-            // Insert
-            txData.id = "TX-" + Date.now();
+            const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+            if (error) throw error;
+          } else {
+            // Insert Override
+            txData.tx_id = id;
             const { error } = await supabaseClient.from('transactions').insert([txData]);
-            if(error) throw error;
-         }
-         Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
-         resetTxForm();
-         refreshAllData();
-       } catch (error) {
-         console.error(error);
-         Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-       }
+            if (error) throw error;
+          }
+        } else {
+          // Insert
+          txData.tx_id = "TX-" + Date.now();
+          const { error } = await supabaseClient.from('transactions').insert([txData]);
+          if (error) throw error;
+        }
+        Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
+        resetTxForm();
+        refreshAllData();
+      } catch (error) {
+        console.error(error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+      }
     }
 
     function editTransaction(id, date, type, category, amount, note) {
-       document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> แก้ไขข้อมูลรายการบัญชี (รหัส: ${id})`;
-       document.getElementById('tx_id').value = id;
-       
-       let parts = date.split('/');
-       if(parts.length === 3) document.getElementById('tx_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-       
-       document.getElementById('tx_type').value = type;
-       document.getElementById('tx_category').value = category;
-       document.getElementById('tx_amount').value = amount;
-       document.getElementById('tx_note').value = note;
-       
-       document.getElementById('btnSaveTx').className = "btn btn-warning w-100 fw-bold";
-       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการแถวข้อมูล';
-       document.getElementById('btnCancelTxEdit').classList.remove('d-none');
-       document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> แก้ไขข้อมูลรายการบัญชี (รหัส: ${id})`;
+      document.getElementById('tx_id').value = id;
+
+      let parts = date.split('/');
+      if (parts.length === 3) document.getElementById('tx_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+      document.getElementById('tx_type').value = type;
+      document.getElementById('tx_category').value = category;
+      document.getElementById('tx_amount').value = amount;
+      document.getElementById('tx_note').value = note;
+
+      document.getElementById('btnSaveTx').className = "btn btn-warning w-100 fw-bold";
+      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการแถวข้อมูล';
+      document.getElementById('btnCancelTxEdit').classList.remove('d-none');
+      document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetTxForm() {
-       document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
-       document.getElementById('txForm').reset();
-       document.getElementById('tx_id').value = '';
-       document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
-       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
-       document.getElementById('btnCancelTxEdit').classList.add('d-none');
+      document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
+      document.getElementById('txForm').reset();
+      document.getElementById('tx_id').value = '';
+      document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
+      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
+      document.getElementById('btnCancelTxEdit').classList.add('d-none');
     }
 
     function deleteTxConfirm(id) {
-       Swal.fire({
-          title: 'ยืนยันลบข้อมูล?',
-          text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#ef4444',
-          cancelButtonColor: '#64748b',
-          confirmButtonText: 'ยืนยันลบ',
-          cancelButtonText: 'ยกเลิก'
-       }).then(async (result) => {
-          if (result.isConfirmed) {
-             Swal.showLoading();
-             try {
-                const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
-                if(error) throw error;
-                Swal.fire('ลบรายการสำเร็จ', '', 'success');
-                refreshAllData();
-             } catch (error) {
-                console.error(error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-             }
+      Swal.fire({
+        title: 'ยืนยันลบข้อมูล?',
+        text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ยืนยันลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          Swal.showLoading();
+          try {
+            let isAuto = id.startsWith('INV-') || id.startsWith('IMP-');
+            if (isAuto) {
+              let exists = globalTransactions.find(t => t.id === id);
+              let txData = { tx_id: id, type: 'รายรับ', date: new Date().toISOString().split('T')[0], category: 'ลบรายการ (ซ่อน)', amount: 0, note: 'DELETED_AUTO' };
+              if (exists) {
+                const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+                if (error) throw error;
+              } else {
+                const { error } = await supabaseClient.from('transactions').insert([txData]);
+                if (error) throw error;
+              }
+            } else {
+              const { error } = await supabaseClient.from('transactions').delete().eq('tx_id', id);
+              if (error) throw error;
+            }
+            Swal.fire('ลบรายการสำเร็จ', '', 'success');
+            refreshAllData();
+          } catch (error) {
+            console.error(error);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
           }
-       });
+        }
+      });
     }
 
     async function submitProduct(e) {
       e.preventDefault();
       let id = document.getElementById('p_id').value;
       let prodData = {
-        updatedAt: formatDateToTH(document.getElementById('p_date').value),
+        updated_at: new Date(document.getElementById('p_date').value).toISOString(),
         name: document.getElementById('p_name').value,
         brand: document.getElementById('p_brand').value,
         cost: Number(document.getElementById('p_cost').value),
-        actualPrice: Number(document.getElementById('p_actualPrice').value),
+        actual_price: Number(document.getElementById('p_actualPrice').value),
         stock: Number(document.getElementById('p_stock').value)
       };
 
       Swal.showLoading();
       try {
-        if(id) {
-           const { error } = await supabaseClient.from('products').update(prodData).eq('id', id);
-           if(error) throw error;
+        if (id) {
+          const { error } = await supabaseClient.from('products').update(prodData).eq('id', id);
+          if (error) throw error;
         } else {
-           prodData.id = "PROD-" + Date.now();
-           const { error } = await supabaseClient.from('products').insert([prodData]);
-           if(error) throw error;
+          prodData.id = "PROD-" + Date.now();
+          const { error } = await supabaseClient.from('products').insert([prodData]);
+          if (error) throw error;
         }
         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
         resetProductForm();
         refreshAllData();
-      } catch(error) {
+      } catch (error) {
         console.error(error);
         Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
@@ -1104,8 +1793,15 @@
     function editProduct(id, date, name, brand, cost, actualPrice, stock) {
       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
-      let parts = date.split('/');
-      if(parts.length === 3) document.getElementById('p_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
+      if (date && date.includes('T')) {
+        document.getElementById('p_date').value = date.split('T')[0];
+      } else if (date && date.includes('/')) {
+        let parts = date.split('/');
+        if (parts.length === 3) document.getElementById('p_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      } else if (date) {
+        document.getElementById('p_date').value = date;
+      }
       document.getElementById('p_name').value = name;
       document.getElementById('p_brand').value = brand;
       document.getElementById('p_cost').value = cost;
@@ -1127,16 +1823,17 @@
       document.getElementById('btnCancelEdit').classList.add('d-none');
     }
 
-    window.onload = function() {
+    window.onload = function () {
       let today = new Date().toISOString().split('T')[0];
       document.getElementById('p_date').value = today;
       document.getElementById('saleDate').value = today;
       document.getElementById('tx_date').value = today;
-      
+
       // เริ่มดึงข้อมูลเมื่อโหลดหน้าเว็บ
       refreshAllData();
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <title>เข้าสู่ระบบ - ระบบจัดการร้าน โน๊ตบุ๊ค ไอทีอุดร</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --dark-blue: #0f172a;
+      --orange: #f97316;
+      --light-bg: #f8fafc;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, var(--dark-blue) 0%, #1e293b 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      padding: 3rem 2rem;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .store-icon {
+      font-size: 3rem;
+      color: var(--orange);
+      margin-bottom: 1rem;
+    }
+
+    .store-title {
+      font-weight: 700;
+      color: var(--dark-blue);
+      margin-bottom: 0.2rem;
+      font-size: 1.5rem;
+    }
+
+    .store-subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .form-control {
+      border-radius: 0.8rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #cbd5e1;
+      margin-bottom: 1.2rem;
+      font-size: 1rem;
+    }
+
+    .form-control:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 0.25rem rgba(249, 115, 22, 0.25);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, var(--orange) 0%, #d94600 100%);
+      border: none;
+      color: var(--white);
+      border-radius: 0.8rem;
+      padding: 0.8rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      width: 100%;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(249, 115, 22, 0.3);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-card">
+    <i class="fa-solid fa-laptop-code store-icon"></i>
+    <h2 class="store-title">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h2>
+    <p class="store-subtitle">ระบบจัดการร้านและคลังสินค้า</p>
+
+    <form id="loginForm">
+      <input type="text" class="form-control" id="username" placeholder="ชื่อผู้ใช้งาน (Username)" required autocomplete="username">
+      <input type="password" class="form-control" id="password" placeholder="รหัสผ่าน (Password)" required autocomplete="current-password">
+      <button type="submit" class="btn btn-login">
+        <i class="fa-solid fa-right-to-bracket me-2"></i> เข้าสู่ระบบ
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // ตั้งค่าเชื่อมต่อ Supabase Database
+    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ตรวจสอบสถานะการล็อกอิน ถ้าล็อกอินแล้วให้ข้ามไปหน้าหลัก
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      
+      const userVal = document.getElementById('username').value.trim();
+      const passVal = document.getElementById('password').value.trim();
+
+      Swal.showLoading();
+
+      try {
+        // Query ค้นหาผู้ใช้จากตาราง users
+        const { data, error } = await supabaseClient
+          .from('users')
+          .select('*')
+          .eq('username', userVal)
+          .eq('password', passVal)
+          .single();
+
+        if (error || !data) {
+          throw new Error('Invalid credentials');
+        }
+
+        // ถ้ารหัสผ่านถูกต้อง
+        localStorage.setItem('isLoggedIn', 'true');
+        Swal.fire({
+          icon: 'success',
+          title: 'ยินดีต้อนรับ',
+          text: 'เข้าสู่ระบบสำเร็จ',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          window.location.href = 'index.html';
+        });
+
+      } catch (err) {
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'เข้าสู่ระบบล้มเหลว',
+          text: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
+          confirmButtonColor: '#f97316'
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>
