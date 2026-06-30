@@ -576,11 +576,20 @@
             </div>
             <hr>
             <div class="card p-3 mb-3 border-start border-warning border-4 bg-light">
-              <div class="form-check form-switch mb-2">
-                <input class="form-check-input" type="checkbox" id="isDeposit" onchange="toggleDepositFields()">
-                <label class="form-check-label fw-bold text-warning" for="isDeposit">
-                  <i class="fa-solid fa-hand-holding-dollar"></i> ลูกค้าชำระมัดจำ (ไม่เต็มจำนวน)
-                </label>
+              <label class="small fw-bold text-muted mb-2">รูปแบบการชำระเงิน</label>
+              <div class="d-flex flex-wrap gap-3 mb-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="payCash" value="CASH" checked onchange="togglePaymentFields()">
+                  <label class="form-check-label fw-bold text-success" for="payCash">ชำระเต็มจำนวน (เงินสด/โอน)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="payDeposit" value="DEPOSIT" onchange="togglePaymentFields()">
+                  <label class="form-check-label fw-bold text-warning" for="payDeposit">ลูกค้าชำระมัดจำ (ไม่เต็มจำนวน)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="payCOD" value="COD" onchange="togglePaymentFields()">
+                  <label class="form-check-label fw-bold text-info" for="payCOD">เก็บเงินปลายทาง (COD)</label>
+                </div>
               </div>
               <div id="depositFields" style="display:none;">
                 <div class="row g-3 align-items-end">
@@ -598,6 +607,10 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <!-- Info alert for stock deduction -->
+              <div class="alert alert-info py-2 px-3 mt-3 mb-0 small" id="codAlert" style="display:none;">
+                <i class="fa-solid fa-truck-fast"></i> สินค้าจะถูกตัดสต็อกทันที สถานะออเดอร์: <strong>รอดำเนินการ (COD)</strong>
               </div>
             </div>
             <div class="row g-3 mb-4">
@@ -999,7 +1012,7 @@
       return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
     }
     function mapSale(s) {
-      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0) };
+      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED' };
     }
     function mapTransaction(t) {
       return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note };
@@ -1223,13 +1236,22 @@
 
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
-        // ตรวจสอบสถานะมัดจำจากข้อมูลการขาย
+        // ตรวจสอบสถานะมัดจำและ COD จากข้อมูลการขาย
         let depositStatus = '';
-        let depositSales = globalSales.filter(s => s.productId === p.id && s.depositRemaining > 0);
+        let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+        let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+        
+        if (pendingCodSales.length > 0) {
+          let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
+          depositStatus += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> รอ COD ${totalCodQty} เครื่อง</span><br>`;
+        }
+        
         if (depositSales.length > 0) {
           let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
-          depositStatus = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
-        } else {
+          depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
+        }
+        
+        if (!depositStatus) {
           depositStatus = '<span class="text-muted">-</span>';
         }
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
@@ -1341,9 +1363,13 @@
       calcDepositRemaining();
     }
 
-    function toggleDepositFields() {
-      let isDeposit = document.getElementById('isDeposit').checked;
+    function togglePaymentFields() {
+      let isDeposit = document.getElementById('payDeposit').checked;
+      let isCOD = document.getElementById('payCOD').checked;
+      
       document.getElementById('depositFields').style.display = isDeposit ? 'block' : 'none';
+      document.getElementById('codAlert').style.display = isCOD ? 'block' : 'none';
+
       if (!isDeposit) {
         document.getElementById('depositAmount').value = '';
         document.getElementById('depositRemaining').value = '0.00';
@@ -1351,7 +1377,7 @@
     }
 
     function calcDepositRemaining() {
-      let isDeposit = document.getElementById('isDeposit').checked;
+      let isDeposit = document.getElementById('payDeposit').checked;
       if (!isDeposit) return;
       let grandTotal = Number(document.getElementById('saleGrandTotal').value) || 0;
       let depositAmt = Number(document.getElementById('depositAmount').value) || 0;
@@ -1381,15 +1407,22 @@
 
       let receiptId = "INV-" + Date.now();
 
-      let isDeposit = document.getElementById('isDeposit').checked;
+      let paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
       let depositAmt = 0;
       let depositRemaining = 0;
-      if (isDeposit) {
+      let orderStatus = 'COMPLETED';
+
+      if (paymentMethod === 'DEPOSIT') {
         depositAmt = Number(document.getElementById('depositAmount').value) || 0;
         if (depositAmt <= 0) { Swal.fire('เตือน', 'กรุณากรอกยอดมัดจำ', 'warning'); return; }
-        if (depositAmt >= totalSales) { Swal.fire('เตือน', 'ยอดมัดจำต้องน้อยกว่ายอดรวม หากจ่ายเต็มจำนวนให้ปิดตัวเลือกมัดจำ', 'warning'); return; }
+        if (depositAmt >= totalSales) { Swal.fire('เตือน', 'ยอดมัดจำต้องน้อยกว่ายอดรวม หากจ่ายเต็มจำนวนให้เลือกชำระเต็มจำนวน', 'warning'); return; }
         depositRemaining = totalSales - depositAmt;
+      } else if (paymentMethod === 'COD') {
+        depositAmt = 0;
+        depositRemaining = totalSales; // ค้างชำระเต็มจำนวนสำหรับ COD
+        orderStatus = 'PENDING_COD';
       } else {
+        // CASH
         depositAmt = totalSales;
         depositRemaining = 0;
       }
@@ -1408,7 +1441,9 @@
         cus_name: document.getElementById('saleCusName').value || "-",
         address: document.getElementById('saleAddress').value || "-",
         deposit_amount: depositAmt,
-        deposit_remaining: depositRemaining
+        deposit_remaining: depositRemaining,
+        payment_method: paymentMethod,
+        status: orderStatus
       };
 
       Swal.showLoading();
@@ -1424,12 +1459,17 @@
           .eq('id', pId);
         if (stockErr) throw stockErr;
 
-        let successMsg = isDeposit ? `บันทึกการขาย (มัดจำ ฿${depositAmt.toLocaleString()}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${depositRemaining.toLocaleString()}` : 'บันทึกการขายและตัดสต็อกเรียบร้อย';
+        let successMsg = 'บันทึกการขายและตัดสต็อกเรียบร้อย';
+        if (paymentMethod === 'DEPOSIT') {
+          successMsg = `บันทึกการขาย (มัดจำ ฿${depositAmt.toLocaleString()}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${depositRemaining.toLocaleString()}`;
+        } else if (paymentMethod === 'COD') {
+          successMsg = `บันทึกออเดอร์ COD และตัดสต็อกเรียบร้อย\nสถานะ: รอดำเนินการ`;
+        }
         Swal.fire('สำเร็จ!', successMsg, 'success');
         document.getElementById('formSale').reset();
-        document.getElementById('isDeposit').checked = false;
+        document.getElementById('payCash').checked = true;
         if(document.getElementById('isVatEnabled')) document.getElementById('isVatEnabled').checked = true;
-        toggleDepositFields();
+        togglePaymentFields();
         calcVAT();
         refreshAllData();
       } catch (error) {
@@ -1458,21 +1498,45 @@
 
           let saleStr = JSON.stringify(s).replace(/'/g, "\\'");
 
-          // แสดงข้อมูลมัดจำ
+          // แสดงข้อมูลสถานะ
           let depositCol = '-';
           let remainCol = '-';
-          let payMoreBtn = '';
-          let isDepositSale = s.depositRemaining > 0;
-          if (isDepositSale) {
-            depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${Number(s.depositAmount).toLocaleString()}</span>`;
-            remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
-            payMoreBtn = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> ชำระเพิ่ม</button>`;
-          } else if (s.depositAmount > 0 && s.depositRemaining === 0) {
-            depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> ชำระครบ</span>`;
-            remainCol = `<span class="text-success">฿0</span>`;
+          let actionBtns = '';
+          
+          let trClass = '';
+          if (s.status === 'CANCELLED') {
+            trClass = 'table-danger text-decoration-line-through text-muted';
+            depositCol = `<span class="badge bg-danger"><i class="fa-solid fa-xmark"></i> ตีกลับ/ยกเลิก</span>`;
+          } else if (s.paymentMethod === 'COD') {
+            if (s.status === 'PENDING_COD') {
+              trClass = 'table-info';
+              depositCol = `<span class="badge bg-info text-dark"><i class="fa-solid fa-truck-fast"></i> รอ COD</span><br><span class="fw-bold text-info">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              actionBtns = `
+                <button class="btn btn-sm btn-success fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'COMPLETED')"><i class="fa-solid fa-check"></i> รับเงินแล้ว</button>
+                <button class="btn btn-sm btn-danger fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'CANCELLED')"><i class="fa-solid fa-rotate-left"></i> ตีกลับ</button>
+              `;
+            } else if (s.status === 'COMPLETED') {
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> COD สำเร็จ</span>`;
+              remainCol = `<span class="text-success">฿0</span>`;
+            }
+          } else {
+            // DEPOSIT OR CASH
+            let isDepositSale = s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0;
+            if (isDepositSale) {
+              trClass = 'table-warning';
+              depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${Number(s.depositAmount).toLocaleString()}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              actionBtns = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> ชำระเพิ่ม</button>`;
+            } else if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining === 0) {
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> ชำระครบ</span>`;
+              remainCol = `<span class="text-success">฿0</span>`;
+            } else if (s.paymentMethod === 'CASH') {
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> เงินสด/โอน</span>`;
+            }
           }
 
-          historyHtml += `<tr ${isDepositSale ? 'style="background-color: #fff8e1;"' : ''}>
+          historyHtml += `<tr class="${trClass}">
               <td><span class="badge bg-dark">${s.receiptId}</span></td>
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
@@ -1486,7 +1550,7 @@
                    <button class="btn btn-sm btn-info text-white fw-bold shadow-sm" onclick='pullToInvoice(${saleStr})'><i class="fa-solid fa-file-invoice"></i> ออกบิลภาษี</button>
                    <button class="btn btn-sm btn-secondary fw-bold shadow-sm" onclick='pullToParcel(${saleStr})'><i class="fa-solid fa-box"></i> ใบปะหน้า</button>
                  </div>
-                 ${payMoreBtn}
+                 ${actionBtns}
               </td>
            </tr>`;
         }
@@ -1497,6 +1561,58 @@
       document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
       document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
       document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="9" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+    }
+
+    async function updateOrderStatus(receiptId, productId, qty, newStatus) {
+      let actionText = newStatus === 'COMPLETED' ? 'ยืนยันรับเงิน COD เรียบร้อยแล้วใช่หรือไม่?' : 'ยืนยันตีกลับ/ยกเลิก ออเดอร์นี้ และคืนสต็อกใช่หรือไม่?';
+      
+      const { isConfirmed } = await Swal.fire({
+        title: 'ยืนยันอัปเดตสถานะ?',
+        text: actionText,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, อัปเดต',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!isConfirmed) return;
+
+      Swal.showLoading();
+      try {
+        if (newStatus === 'CANCELLED') {
+          // ดึงข้อมูลสินค้าเดิมมาเพิ่มสต็อก
+          const product = globalProducts.find(p => p.id === productId);
+          if (product) {
+            const { error: stockErr } = await supabaseClient.from('products')
+              .update({ stock: product.stock + qty })
+              .eq('id', productId);
+            if (stockErr) throw stockErr;
+          }
+        }
+
+        // อัปเดตสถานะออเดอร์
+        let updateData = { status: newStatus };
+        if (newStatus === 'COMPLETED') {
+          // ถ้า COD สำเร็จ จะถือว่าจ่ายครบ (deposit_remaining = 0, deposit_amount = grand_total)
+          const sale = globalSales.find(s => s.receiptId === receiptId);
+          if (sale) {
+            updateData.deposit_amount = sale.totalSales;
+            updateData.deposit_remaining = 0;
+          }
+        }
+
+        const { error: saleErr } = await supabaseClient.from('sales')
+          .update(updateData)
+          .eq('invoice_id', receiptId);
+
+        if (saleErr) throw saleErr;
+
+        Swal.fire('สำเร็จ!', 'อัปเดตสถานะเรียบร้อย', 'success');
+        refreshAllData();
+      } catch (error) {
+        console.error(error);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถอัปเดตสถานะได้', 'error');
+      }
     }
 
     async function payMoreDeposit(receiptId, currentDeposit, currentRemaining, grandTotal) {
