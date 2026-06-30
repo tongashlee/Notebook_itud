@@ -1098,8 +1098,8 @@
       });
 
       let count = 0;
-      // เรียงจากใหม่ไปเก่า โดยใช้ createdAt
-      let sortedSales = [...globalSales].sort((a, b) => {
+      // เรียงจากใหม่ไปเก่า โดยใช้ createdAt และตัดรายการที่ยกเลิกออก
+      let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => {
         let dateA = new Date(a.createdAt).getTime();
         let dateB = new Date(b.createdAt).getTime();
         if (isNaN(dateA)) dateA = 0;
@@ -1485,8 +1485,8 @@
       let totalQty = 0, totalCost = 0, totalSub = 0, totalProfit = 0;
       let historyHtml = '';
 
-      // เรียงจากใหม่ไปเก่า
-      let sortedSales = [...globalSales].sort((a, b) => b.receiptId.localeCompare(a.receiptId));
+      // เรียงจากใหม่ไปเก่า และตัดรายการที่ถูกยกเลิก/ตีกลับออก
+      let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => b.receiptId.localeCompare(a.receiptId));
 
       sortedSales.forEach(s => {
         let sMonth = s.date.split('/')[1] + "/" + s.date.split('/')[2];
