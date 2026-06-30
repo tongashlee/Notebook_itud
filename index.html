@@ -432,6 +432,8 @@
                 <th>ยี่ห้อ</th>
                 <th class="text-success">ราคาขายจริง</th>
                 <th>จำนวนคงเหลือ</th>
+                <th>Facebook</th>
+                <th>สถานะมัดจำ</th>
               </tr>
             </thead>
             <tbody id="viewData" class="text-center"></tbody>
@@ -470,6 +472,8 @@
               <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาขายหน้าร้านต่อชิ้น
                   (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0">
               </div>
+              <div class="col-md-12"><label class="small fw-bold text-muted mb-1"><i class="fa-brands fa-facebook text-primary"></i> ลิ้งค์อ้างอิงจาก Facebook (ถ้ามี)</label><input
+                  type="url" class="form-control" id="p_fbLink" placeholder="วาง URL ของโพสต์ Facebook ที่นี่"></div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-custom-orange w-100" id="btnSaveProduct"><i
@@ -507,6 +511,7 @@
                 <th>ทุน</th>
                 <th>ขาย</th>
                 <th>คงเหลือ</th>
+                <th>Facebook</th>
                 <th>จัดการ</th>
               </tr>
             </thead>
@@ -555,13 +560,46 @@
                   class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text"
                   class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
-              <div class="col-md-4"><label class="small fw-bold text-muted">VAT 7%</label><input type="text"
-                  class="form-control bg-light text-danger" id="saleVat" readonly value="0.00"></div>
+              <div class="col-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="small fw-bold text-muted mb-0">VAT 7%</label>
+                  <div class="form-check form-switch m-0 p-0 d-flex align-items-center gap-2">
+                    <input class="form-check-input m-0" type="checkbox" id="isVatEnabled" checked onchange="calcVAT()">
+                    <label class="form-check-label small" for="isVatEnabled" style="margin-top: 2px;">คิด VAT</label>
+                  </div>
+                </div>
+                <input type="text" class="form-control bg-light text-danger" id="saleVat" readonly value="0.00">
+              </div>
               <div class="col-md-4"><label class="small fw-bold text-muted">ยอดรวมทั้งสิ้น (รวม VAT)</label><input
                   type="text" class="form-control bg-light text-primary fw-bold fs-5" id="saleGrandTotal" readonly
                   value="0.00"></div>
             </div>
             <hr>
+            <div class="card p-3 mb-3 border-start border-warning border-4 bg-light">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="isDeposit" onchange="toggleDepositFields()">
+                <label class="form-check-label fw-bold text-warning" for="isDeposit">
+                  <i class="fa-solid fa-hand-holding-dollar"></i> ลูกค้าชำระมัดจำ (ไม่เต็มจำนวน)
+                </label>
+              </div>
+              <div id="depositFields" style="display:none;">
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-4">
+                    <label class="small fw-bold text-muted">ยอดมัดจำที่ลูกค้าจ่าย (บาท)</label>
+                    <input type="number" class="form-control fw-bold text-warning fs-5" id="depositAmount" min="0" step="0.01" oninput="calcDepositRemaining()" placeholder="0.00">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="small fw-bold text-muted">ยอดคงเหลือที่ต้องชำระ</label>
+                    <input type="text" class="form-control fw-bold text-danger fs-5 bg-light" id="depositRemaining" readonly value="0.00">
+                  </div>
+                  <div class="col-md-4">
+                    <div class="alert alert-warning py-2 px-3 mb-0 small">
+                      <i class="fa-solid fa-circle-info"></i> สินค้าจะถูกตัดสต็อกทันที แต่จะบันทึกว่ายังชำระไม่ครบ
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="row g-3 mb-4">
               <div class="col-md-6"><label class="small fw-bold text-muted">ชื่อลูกค้า
                   (ออกใบกำกับภาษี/ใบเสนอราคา)</label><input type="text" class="form-control" id="saleCusName"
@@ -632,6 +670,8 @@
                       <th>รายการสินค้า</th>
                       <th>จำนวน</th>
                       <th>ยอดรวมสุทธิ</th>
+                      <th>ยอดมัดจำ</th>
+                      <th>คงเหลือ</th>
                       <th>ชื่อลูกค้า</th>
                       <th>การกระทำ / พิมพ์ด่วน</th>
                     </tr>
@@ -682,8 +722,9 @@
           <div class="row g-3 mb-3">
             <div class="col-md-3"><label class="small fw-bold">ประเภทเอกสาร</label><select id="qtDocType"
                 class="form-select form-select-sm">
-                <option value="ใบเสนอราคา / QUOTATION">ใบเสนอราคา</option>
-                <option value="ใบกำกับภาษี / TAX INVOICE">ใบกำกับภาษี</option>
+                <option value="ใบเสนอราคา / QUOTATION">ใบเสนอราคา (มี VAT)</option>
+                <option value="ใบกำกับภาษี / TAX INVOICE">ใบกำกับภาษี (มี VAT)</option>
+                <option value="บิลเงินสด / CASH RECEIPT">บิลธรรมดา / เงินสด (ไม่มี VAT)</option>
               </select></div>
             <div class="col-md-3"><label class="small fw-bold">เลขที่เอกสาร</label><input type="text" id="qtDocId"
                 class="form-control form-control-sm" placeholder="เช่น INV2026001"></div>
@@ -955,10 +996,10 @@
     // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
     // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
     function mapProduct(p) {
-      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at };
+      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
     }
     function mapSale(s) {
-      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total) };
+      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0) };
     }
     function mapTransaction(t) {
       return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note };
@@ -1182,9 +1223,19 @@
 
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
-        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td></tr>`;
+        // ตรวจสอบสถานะมัดจำจากข้อมูลการขาย
+        let depositStatus = '';
+        let depositSales = globalSales.filter(s => s.productId === p.id && s.depositRemaining > 0);
+        if (depositSales.length > 0) {
+          let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
+          depositStatus = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
+        } else {
+          depositStatus = '<span class="text-muted">-</span>';
+        }
+        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
+        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td><td>${fbBtn}</td><td>${depositStatus}</td></tr>`;
       }).join('');
-      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="6" class="text-muted">ไม่มีรายการสินค้าในระบบตามเงื่อนไขที่เลือก</td></tr>';
+      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีรายการสินค้าในระบบตามเงื่อนไขที่เลือก</td></tr>';
     }
 
     function renderManageProducts() {
@@ -1233,9 +1284,10 @@
 
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
-        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock})"><i class="fa-solid fa-pen"></i></button></td></tr>`;
+        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
+        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button></td></tr>`;
       }).join('');
-      document.getElementById('productData').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
+      document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
 
     function renderSalesTab() {
@@ -1280,11 +1332,32 @@
     function calcVAT() {
       let prc = Number(document.getElementById('saleCustomPrice').value) || 0;
       let qty = Number(document.getElementById('saleQty').value) || 0;
+      let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
       let sub = prc * qty;
-      let vat = sub * 0.07;
+      let vat = isVat ? sub * 0.07 : 0;
       document.getElementById('saleSubTotal').value = sub.toFixed(2);
       document.getElementById('saleVat').value = vat.toFixed(2);
       document.getElementById('saleGrandTotal').value = (sub + vat).toFixed(2);
+      calcDepositRemaining();
+    }
+
+    function toggleDepositFields() {
+      let isDeposit = document.getElementById('isDeposit').checked;
+      document.getElementById('depositFields').style.display = isDeposit ? 'block' : 'none';
+      if (!isDeposit) {
+        document.getElementById('depositAmount').value = '';
+        document.getElementById('depositRemaining').value = '0.00';
+      }
+    }
+
+    function calcDepositRemaining() {
+      let isDeposit = document.getElementById('isDeposit').checked;
+      if (!isDeposit) return;
+      let grandTotal = Number(document.getElementById('saleGrandTotal').value) || 0;
+      let depositAmt = Number(document.getElementById('depositAmount').value) || 0;
+      let remaining = grandTotal - depositAmt;
+      if (remaining < 0) remaining = 0;
+      document.getElementById('depositRemaining').value = remaining.toFixed(2);
     }
 
     async function submitSale(e) {
@@ -1302,10 +1375,24 @@
       let subTotal = customPrice * qty;
       let totalCost = product.cost * qty;
       let profit = subTotal - totalCost;
-      let vat = subTotal * 0.07;
+      let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
+      let vat = isVat ? subTotal * 0.07 : 0;
       let totalSales = subTotal + vat;
 
       let receiptId = "INV-" + Date.now();
+
+      let isDeposit = document.getElementById('isDeposit').checked;
+      let depositAmt = 0;
+      let depositRemaining = 0;
+      if (isDeposit) {
+        depositAmt = Number(document.getElementById('depositAmount').value) || 0;
+        if (depositAmt <= 0) { Swal.fire('เตือน', 'กรุณากรอกยอดมัดจำ', 'warning'); return; }
+        if (depositAmt >= totalSales) { Swal.fire('เตือน', 'ยอดมัดจำต้องน้อยกว่ายอดรวม หากจ่ายเต็มจำนวนให้ปิดตัวเลือกมัดจำ', 'warning'); return; }
+        depositRemaining = totalSales - depositAmt;
+      } else {
+        depositAmt = totalSales;
+        depositRemaining = 0;
+      }
 
       let saleData = {
         invoice_id: receiptId,
@@ -1319,7 +1406,9 @@
         vat: vat,
         grand_total: totalSales,
         cus_name: document.getElementById('saleCusName').value || "-",
-        address: document.getElementById('saleAddress').value || "-"
+        address: document.getElementById('saleAddress').value || "-",
+        deposit_amount: depositAmt,
+        deposit_remaining: depositRemaining
       };
 
       Swal.showLoading();
@@ -1335,8 +1424,12 @@
           .eq('id', pId);
         if (stockErr) throw stockErr;
 
-        Swal.fire('สำเร็จ!', 'บันทึกการขายและตัดสต็อกเรียบร้อย', 'success');
+        let successMsg = isDeposit ? `บันทึกการขาย (มัดจำ ฿${depositAmt.toLocaleString()}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${depositRemaining.toLocaleString()}` : 'บันทึกการขายและตัดสต็อกเรียบร้อย';
+        Swal.fire('สำเร็จ!', successMsg, 'success');
         document.getElementById('formSale').reset();
+        document.getElementById('isDeposit').checked = false;
+        if(document.getElementById('isVatEnabled')) document.getElementById('isVatEnabled').checked = true;
+        toggleDepositFields();
         calcVAT();
         refreshAllData();
       } catch (error) {
@@ -1365,18 +1458,35 @@
 
           let saleStr = JSON.stringify(s).replace(/'/g, "\\'");
 
-          historyHtml += `<tr>
+          // แสดงข้อมูลมัดจำ
+          let depositCol = '-';
+          let remainCol = '-';
+          let payMoreBtn = '';
+          let isDepositSale = s.depositRemaining > 0;
+          if (isDepositSale) {
+            depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${Number(s.depositAmount).toLocaleString()}</span>`;
+            remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+            payMoreBtn = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> ชำระเพิ่ม</button>`;
+          } else if (s.depositAmount > 0 && s.depositRemaining === 0) {
+            depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> ชำระครบ</span>`;
+            remainCol = `<span class="text-success">฿0</span>`;
+          }
+
+          historyHtml += `<tr ${isDepositSale ? 'style="background-color: #fff8e1;"' : ''}>
               <td><span class="badge bg-dark">${s.receiptId}</span></td>
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
               <td>${s.qty}</td>
               <td class="text-primary fw-bold">฿${Number(s.totalSales).toLocaleString()}</td>
+              <td>${depositCol}</td>
+              <td>${remainCol}</td>
               <td class="text-start">${s.cusName}</td>
               <td>
                  <div class="btn-group">
                    <button class="btn btn-sm btn-info text-white fw-bold shadow-sm" onclick='pullToInvoice(${saleStr})'><i class="fa-solid fa-file-invoice"></i> ออกบิลภาษี</button>
                    <button class="btn btn-sm btn-secondary fw-bold shadow-sm" onclick='pullToParcel(${saleStr})'><i class="fa-solid fa-box"></i> ใบปะหน้า</button>
                  </div>
+                 ${payMoreBtn}
               </td>
            </tr>`;
         }
@@ -1386,7 +1496,53 @@
       document.getElementById('repCost').innerText = "฿" + totalCost.toLocaleString();
       document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
       document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
-      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="9" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+    }
+
+    async function payMoreDeposit(receiptId, currentDeposit, currentRemaining, grandTotal) {
+      const { value: payAmount } = await Swal.fire({
+        title: 'ชำระเงินเพิ่ม',
+        html: `<div class="text-start">
+          <p><strong>เลขบิล:</strong> ${receiptId}</p>
+          <p><strong>ยอดรวมทั้งหมด:</strong> <span class="text-primary">฿${grandTotal.toLocaleString()}</span></p>
+          <p><strong>ชำระแล้ว (มัดจำ):</strong> <span class="text-warning">฿${currentDeposit.toLocaleString()}</span></p>
+          <p><strong>ยอดค้างชำระ:</strong> <span class="text-danger fw-bold">฿${currentRemaining.toLocaleString()}</span></p>
+          <hr>
+          <label class="fw-bold">จำนวนเงินที่ชำระเพิ่ม (บาท):</label>
+        </div>`,
+        input: 'number',
+        inputAttributes: { min: 1, max: currentRemaining, step: '0.01' },
+        inputValue: currentRemaining,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยันชำระ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#f97316',
+        inputValidator: (value) => {
+          if (!value || Number(value) <= 0) return 'กรุณากรอกจำนวนเงินที่ชำระ';
+          if (Number(value) > currentRemaining) return `จำนวนเงินต้องไม่เกินยอดค้าง ฿${currentRemaining.toLocaleString()}`;
+        }
+      });
+
+      if (payAmount) {
+        let newDeposit = currentDeposit + Number(payAmount);
+        let newRemaining = currentRemaining - Number(payAmount);
+        if (newRemaining < 0.01) newRemaining = 0; // ปัดเศษ
+
+        Swal.showLoading();
+        try {
+          const { error } = await supabaseClient.from('sales')
+            .update({ deposit_amount: newDeposit, deposit_remaining: newRemaining })
+            .eq('invoice_id', receiptId);
+          if (error) throw error;
+
+          let statusMsg = newRemaining === 0 ? 'ชำระครบเต็มจำนวนแล้ว!' : `ชำระเพิ่ม ฿${Number(payAmount).toLocaleString()} สำเร็จ\nยอดคงเหลือ: ฿${newRemaining.toLocaleString()}`;
+          Swal.fire('สำเร็จ!', statusMsg, 'success');
+          refreshAllData();
+        } catch (error) {
+          console.error(error);
+          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการชำระเงินได้', 'error');
+        }
+      }
     }
 
     function pullToInvoice(sale) {
@@ -1486,11 +1642,14 @@
         html += `<tr><td>${i + 1}</td><td class="text-start">${desc}</td><td>${qty}</td><td>฿${prc.toLocaleString()}</td><td>฿${amt.toLocaleString()}</td></tr>`;
       });
 
-      let vat = subTotal * 0.07;
+      let isNoVat = document.getElementById('qtDocType').value.includes('CASH RECEIPT');
+      let vat = isNoVat ? 0 : subTotal * 0.07;
+      let grandTotal = subTotal + vat;
+
       document.getElementById('invItemsBody').innerHTML = html;
       document.getElementById('invSubTotal').innerText = "฿" + subTotal.toLocaleString();
-      document.getElementById('invVat').innerText = "฿" + vat.toLocaleString();
-      document.getElementById('invGrandTotal').innerText = "฿" + (subTotal + vat).toLocaleString();
+      document.getElementById('invVat').innerText = isNoVat ? "-" : "฿" + vat.toLocaleString();
+      document.getElementById('invGrandTotal').innerText = "฿" + grandTotal.toLocaleString();
 
       document.getElementById('printInvoiceSection').classList.remove('d-none');
       window.print();
@@ -1768,7 +1927,8 @@
         brand: document.getElementById('p_brand').value,
         cost: Number(document.getElementById('p_cost').value),
         actual_price: Number(document.getElementById('p_actualPrice').value),
-        stock: Number(document.getElementById('p_stock').value)
+        stock: Number(document.getElementById('p_stock').value),
+        fb_link: document.getElementById('p_fbLink').value || null
       };
 
       Swal.showLoading();
@@ -1790,7 +1950,7 @@
       }
     }
 
-    function editProduct(id, date, name, brand, cost, actualPrice, stock) {
+    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "") {
       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
       // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
@@ -1807,6 +1967,7 @@
       document.getElementById('p_cost').value = cost;
       document.getElementById('p_actualPrice').value = actualPrice;
       document.getElementById('p_stock').value = stock;
+      document.getElementById('p_fbLink').value = fbLink && fbLink !== 'undefined' ? fbLink : "";
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
