@@ -568,11 +568,13 @@
                   class="form-control" id="saleDate" required></div>
               <div class="col-md-8"><label class="small fw-bold text-muted">เลือกสินค้าที่จะตัดสต็อก</label><select
                   class="form-select" id="saleProduct" required></select></div>
-              <div class="col-md-6"><label class="small fw-bold text-muted">ราคาที่ขายจริงต่อหน่วย (ไม่รวม
+              <div class="col-md-4"><label class="small fw-bold text-muted">ราคาที่ขายจริงต่อหน่วย (ไม่รวม
                   VAT)</label><input type="number" class="form-control text-success fw-bold" id="saleCustomPrice"
                   required oninput="calcVAT()"></div>
-              <div class="col-md-6"><label class="small fw-bold text-muted">จำนวนที่ขาย</label><input type="number"
+              <div class="col-md-4"><label class="small fw-bold text-muted">จำนวนที่ขาย</label><input type="number"
                   class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted">ค่าขนส่ง (หักกำไร)</label><input type="number"
+                  class="form-control text-danger fw-bold" id="saleShippingCost" value="0" min="0" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text"
                   class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
               <div class="col-md-4">
@@ -703,6 +705,7 @@
                       <th>รายการสินค้า</th>
                       <th>จำนวน</th>
                       <th>ยอดรวมสุทธิ</th>
+                      <th>ค่าขนส่ง</th>
                       <th>ยอดมัดจำ</th>
                       <th>คงเหลือ</th>
                       <th>ชื่อลูกค้า</th>
@@ -1032,7 +1035,7 @@
       return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
     }
     function mapSale(s) {
-      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED' };
+      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED' };
     }
     function mapTransaction(t) {
       return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note };
@@ -1428,7 +1431,8 @@
       let customPrice = Number(document.getElementById('saleCustomPrice').value);
       let subTotal = customPrice * qty;
       let totalCost = product.cost * qty;
-      let profit = subTotal - totalCost;
+      let shippingCost = Number(document.getElementById('saleShippingCost').value) || 0;
+      let profit = subTotal - totalCost - shippingCost;
       let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
       let vat = isVat ? subTotal * 0.07 : 0;
       let totalSales = subTotal + vat;
@@ -1464,6 +1468,7 @@
         sub_total: subTotal,
         total_cost: totalCost,
         profit: profit,
+        shipping_cost: shippingCost,
         vat: vat,
         grand_total: totalSales,
         cus_name: document.getElementById('saleCusName').value || "-",
@@ -1571,6 +1576,7 @@
               <td class="text-start">${s.productName}</td>
               <td>${s.qty}</td>
               <td class="text-primary fw-bold">฿${Number(s.totalSales).toLocaleString()}</td>
+              <td>${s.shippingCost > 0 ? `<span class="text-danger">-฿${s.shippingCost.toLocaleString()}</span>` : "-"}</td>
               <td>${depositCol}</td>
               <td>${remainCol}</td>
               <td class="text-start">${s.cusName}</td>
