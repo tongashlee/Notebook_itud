@@ -114,8 +114,8 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ตรวจสอบสถานะการล็อกอิน ถ้าล็อกอินแล้วให้ข้ามไปหน้าหลัก
-    if (localStorage.getItem('isLoggedIn') === 'true') {
-      window.location.href = 'index.html';
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+      window.location.replace('index.html');
     }
 
     document.getElementById('loginForm').addEventListener('submit', async function (e) {
@@ -140,7 +140,7 @@
         }
 
         // ถ้ารหัสผ่านถูกต้อง
-        localStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('isLoggedIn', 'true');
         Swal.fire({
           icon: 'success',
           title: 'ยินดีต้อนรับ',
@@ -148,7 +148,7 @@
           timer: 1500,
           showConfirmButton: false
         }).then(() => {
-          window.location.href = 'index.html';
+          window.location.replace('index.html');
         });
 
       } catch (err) {

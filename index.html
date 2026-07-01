@@ -3,8 +3,8 @@
 
 <head>
   <script>
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
-      window.location.href = 'login.html';
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.replace('login.html');
     }
   </script>
   <meta charset="UTF-8">
@@ -689,10 +689,15 @@
             </div>
 
             <div class="tab-pane fade" id="tab-history">
+              <div class="mb-3 d-flex gap-2">
+                <button class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="deleteSelectedSales()"><i class="fa-solid fa-trash"></i> ลบรายการที่เลือก</button>
+                <span class="text-muted small align-self-center" id="selectedCount"></span>
+              </div>
               <div class="table-responsive">
                 <table class="table table-hover align-middle text-center" style="font-size:0.9rem;">
                   <thead class="table-light">
                     <tr>
+                      <th><input type="checkbox" class="form-check-input" id="selectAllSales" onchange="toggleSelectAllSales()"></th>
                       <th>เลขบิลขาย</th>
                       <th>วันที่</th>
                       <th>รายการสินค้า</th>
@@ -1014,8 +1019,8 @@
         cancelButtonText: 'ยกเลิก'
       }).then((result) => {
         if (result.isConfirmed) {
-          localStorage.removeItem('isLoggedIn');
-          window.location.href = 'login.html';
+          sessionStorage.removeItem('isLoggedIn');
+          window.location.replace('login.html');
         }
       });
     }
@@ -1051,6 +1056,11 @@
         let today = new Date();
         mFilter = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, '0');
         document.getElementById('monthFilter').value = mFilter;
+      }
+
+      let manageDateFilter = document.getElementById('manageDateFilter');
+      if (manageDateFilter && document.activeElement !== manageDateFilter) {
+        manageDateFilter.value = mFilter;
       }
 
       try {
@@ -1288,12 +1298,6 @@
       let dateFilterEl = document.getElementById('manageDateFilter');
       let brandFilterEl = document.getElementById('manageBrandFilter');
       let stockFilterEl = document.getElementById('manageStockFilter');
-
-      // Sync global month filter on first load if empty
-      if (dateFilterEl && !dateFilterEl.value && !dateFilterEl.hasAttribute('data-init')) {
-        dateFilterEl.value = document.getElementById('monthFilter').value;
-        dateFilterEl.setAttribute('data-init', 'true');
-      }
 
       let dateFilter = dateFilterEl ? dateFilterEl.value : "";
       let brandFilter = brandFilterEl ? brandFilterEl.value : "";
@@ -1561,6 +1565,7 @@
           }
 
           historyHtml += `<tr class="${trClass}">
+              <td><input type="checkbox" class="form-check-input sale-checkbox" data-id="${s.receiptId}" data-pid="${s.productId}" data-qty="${s.qty}" onchange="updateSelectedCount()"></td>
               <td><span class="badge bg-dark">${s.receiptId}</span></td>
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
@@ -1575,6 +1580,10 @@
                    <button class="btn btn-sm btn-secondary fw-bold shadow-sm" onclick='pullToParcel(${saleStr})'><i class="fa-solid fa-box"></i> ใบปะหน้า</button>
                  </div>
                  ${actionBtns}
+                 <div class="btn-group mt-1">
+                   <button class="btn btn-sm btn-outline-warning" onclick='editSaleModal(${saleStr})' title="แก้ไขข้อมูล"><i class="fa-solid fa-pen"></i> แก้ไข</button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteSale('${s.receiptId}','${s.productId}',${s.qty})" title="ลบรายการนี้"><i class="fa-solid fa-trash"></i> ลบ</button>
+                 </div>
               </td>
            </tr>`;
         }
@@ -1584,7 +1593,65 @@
       document.getElementById('repCost').innerText = "฿" + totalCost.toLocaleString();
       document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
       document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
-      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="9" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="10" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+      updateSelectedCount();
+    }
+
+    function toggleSelectAllSales() {
+      let checked = document.getElementById('selectAllSales').checked;
+      document.querySelectorAll('.sale-checkbox').forEach(cb => cb.checked = checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      let count = document.querySelectorAll('.sale-checkbox:checked').length;
+      let el = document.getElementById('selectedCount');
+      el.innerText = count > 0 ? `เลือกแล้ว ${count} รายการ` : '';
+    }
+
+    async function deleteSelectedSales() {
+      let checkboxes = document.querySelectorAll('.sale-checkbox:checked');
+      if (checkboxes.length === 0) {
+        Swal.fire('เตือน', 'กรุณาเลือกรายการที่ต้องการลบก่อน', 'warning');
+        return;
+      }
+      const { isConfirmed } = await Swal.fire({
+        title: `ลบ ${checkboxes.length} รายการที่เลือก?`,
+        html: '<div class="text-danger">ระบบจะคืนสต็อกกลับเข้าคลังโดยอัตโนมัติ</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'ใช่, ลบทั้งหมด',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!isConfirmed) return;
+      Swal.showLoading();
+      try {
+        for (let cb of checkboxes) {
+          let receiptId = cb.dataset.id;
+          let productId = cb.dataset.pid;
+          let qty = Number(cb.dataset.qty);
+          // คืนสต็อก
+          const product = globalProducts.find(p => p.id === productId);
+          if (product) {
+            const { error: stockErr } = await supabaseClient.from('products')
+              .update({ stock: product.stock + qty })
+              .eq('id', productId);
+            if (stockErr) throw stockErr;
+            product.stock += qty; // update local cache for next iteration
+          }
+          // ลบรายการขาย
+          const { error: saleErr } = await supabaseClient.from('sales')
+            .delete()
+            .eq('invoice_id', receiptId);
+          if (saleErr) throw saleErr;
+        }
+        Swal.fire('ลบเรียบร้อย!', `ลบ ${checkboxes.length} รายการและคืนสต็อกเรียบร้อย`, 'success');
+        refreshAllData();
+      } catch (err) {
+        console.error(err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
+      }
     }
 
     async function deleteSale(receiptId, productId, qty) {
