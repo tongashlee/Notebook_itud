@@ -343,6 +343,21 @@
           </div>
         </div>
 
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="stat-card px-3 py-4 border-start border-info border-4">
+              <h6>ค้างชำระ COD</h6>
+              <h3 class="text-info" id="dashCodPending">฿0</h3><i class="fa-solid fa-truck-fast bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="stat-card px-3 py-4 border-start border-warning border-4">
+              <h6>ค้างชำระมัดจำ</h6>
+              <h3 class="text-warning" id="dashDepositPending">฿0</h3><i class="fa-solid fa-hand-holding-dollar bg-icon"></i>
+            </div>
+          </div>
+        </div>
+
         <div class="row mb-4">
           <div class="col-12">
             <div class="stat-card bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4">
@@ -1152,6 +1167,15 @@
       document.getElementById('dashInventoryValue').innerText = "฿" + invValue.toLocaleString();
       document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">ไม่มีรายการขายในเดือนนี้</td></tr>';
 
+      // คำนวณยอดค้างชำระ COD และมัดจำ
+      let codPending = 0, depositPending = 0;
+      globalSales.forEach(s => {
+        if (s.status === 'PENDING_COD') codPending += Number(s.depositRemaining);
+        if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0) depositPending += Number(s.depositRemaining);
+      });
+      document.getElementById('dashCodPending').innerText = "฿" + codPending.toLocaleString();
+      document.getElementById('dashDepositPending').innerText = "฿" + depositPending.toLocaleString();
+
       if (lowStockCount > 0) {
         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
         document.getElementById('dashLowStock').innerHTML = lowStockHtml;
@@ -1561,6 +1585,76 @@
       document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
       document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
       document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="9" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+    }
+
+    async function deleteSale(receiptId, productId, qty) {
+      const { isConfirmed } = await Swal.fire({
+        title: 'ลบรายการขายนี้?',
+        html: `<div class="text-danger fw-bold">เลขบิล: ${receiptId}</div><div class="text-muted small mt-1">ระบบจะคืนสต็อกกลับเข้าคลังโดยอัตโนมัติ</div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'ใช่, ลบเลย',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!isConfirmed) return;
+      Swal.showLoading();
+      try {
+        // คืนสต็อก
+        const product = globalProducts.find(p => p.id === productId);
+        if (product) {
+          const { error: stockErr } = await supabaseClient.from('products')
+            .update({ stock: product.stock + qty })
+            .eq('id', productId);
+          if (stockErr) throw stockErr;
+        }
+        // ลบรายการขาย
+        const { error: saleErr } = await supabaseClient.from('sales')
+          .delete()
+          .eq('invoice_id', receiptId);
+        if (saleErr) throw saleErr;
+        Swal.fire('ลบเรียบร้อย!', 'ลบรายการและคืนสต็อกเรียบร้อย', 'success');
+        refreshAllData();
+      } catch (err) {
+        console.error(err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
+      }
+    }
+
+    async function editSaleModal(s) {
+      const { value: formValues } = await Swal.fire({
+        title: `แก้ไขรายการขาย`,
+        html: `
+          <div class="text-start">
+            <label class="small fw-bold mb-1">ชื่อลูกค้า</label>
+            <input id="edit_cusName" class="swal2-input" value="${s.cusName || ''}"พลาซหอลดเดอร์="ชื่อลูกค้า">
+            <label class="small fw-bold mb-1">ที่อยู่/เบอร์โทรศัพท์</label>
+            <input id="edit_address" class="swal2-input" value="${s.address || ''}" placeholder="ที่อยู่/เบอร์โทรศัพท์">
+            <label class="small fw-bold mb-1">ราคาขายจริง (ยอดรวมทั้งสิ้น)</label>
+            <input id="edit_grandTotal" class="swal2-input" type="number" value="${Number(s.totalSales)}" placeholder="ยอดรวม">
+          </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกการแก้ไข',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => ({
+          cusName: document.getElementById('edit_cusName').value,
+          address: document.getElementById('edit_address').value,
+          grandTotal: Number(document.getElementById('edit_grandTotal').value)
+        })
+      });
+      if (!formValues) return;
+      Swal.showLoading();
+      try {
+        const { error } = await supabaseClient.from('sales')
+          .update({ cus_name: formValues.cusName, address: formValues.address, grand_total: formValues.grandTotal })
+          .eq('invoice_id', s.receiptId);
+        if (error) throw error;
+        Swal.fire('สำเร็จ!', 'อัปเดตเรียบร้อย', 'success');
+        refreshAllData();
+      } catch (err) {
+        console.error(err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถแก้ไขได้', 'error');
+      }
     }
 
     async function updateOrderStatus(receiptId, productId, qty, newStatus) {
