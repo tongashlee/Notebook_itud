@@ -107,12 +107,8 @@
     </form>
   </div>
 
+  <script src="config.js"></script>
   <script>
-    // ตั้งค่าเชื่อมต่อ Supabase Database
-    const SUPABASE_URL = 'https://pffwrkvkrciakslmednu.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZndya3ZrcmNpYWtzbG1lZG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDg2ODIsImV4cCI6MjA5NzgyNDY4Mn0.YSUqVeRqo1Q505CqRGh6vrQ6iJoU3blZTknKJIkShP4';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     // ตรวจสอบสถานะการล็อกอิน ถ้าล็อกอินแล้วให้ข้ามไปหน้าหลัก
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
       window.location.replace('index.html');
