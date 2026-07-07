@@ -885,8 +885,7 @@
         <div class="row mb-4">
           <div class="col-7 text-start">
             <h4 class="fw-bold m-0 text-dark-blue">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
-            <p class="small m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)<br>ที่อยู่: อำเภอเมือง
-              จังหวัดอุดรธานี 41000<br>โทรศัพท์: 042-xxxxxx</p>
+            <p class="small m-0">ทะเบียนนิติบุคคลเลขที่ 0413569001497 (สำนักงานใหญ่)<br>ที่อยู่: 119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี ปณ.41000<br>โทรศัพท์: 0908422774</p>
           </div>
           <div class="col-5 text-end">
             <h3 class="fw-bold text-orange m-0" id="invTitleDisplay">ใบกำกับภาษี / TAX INVOICE</h3>
@@ -942,7 +941,7 @@
         <div class="text-center mb-4">
           <h4 class="fw-bold text-dark-blue">รายงานบัญชีรายรับ - รายจ่าย</h4>
           <h5 class="fw-bold">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h5>
-          <p class="m-0">เลขประจำตัวผู้เสียภาษี: 04235xxxxxxxx (สำนักงานใหญ่)</p>
+          <p class="m-0">ทะเบียนนิติบุคคลเลขที่ 0413569001497 (สำนักงานใหญ่)<br>ที่อยู่: 119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี ปณ.41000<br>โทรศัพท์: 0908422774</p>
           <p class="m-0 fw-bold" id="txPrintMonth">ประจำเดือน: ...</p>
         </div>
         <table class="table table-bordered align-middle text-center" style="font-size:0.9rem;">
@@ -1029,7 +1028,7 @@
       return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
     }
     function mapSale(s) {
-      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED' };
+      return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED', completedDate: s.completed_date ? formatDateToTH(s.completed_date) : null };
     }
     function mapTransaction(t) {
       return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note };
@@ -1130,7 +1129,12 @@
       });
 
       sortedSales.forEach(s => {
-        let dParts = s.date.split('/');
+        // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate เป็นวันที่นับยอด
+        let effectiveDate = s.date;
+        if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
+          effectiveDate = s.completedDate;
+        }
+        let dParts = effectiveDate.split('/');
         let sDay = dParts[0];
         let sMonth = dParts[1] + "/" + dParts[2];
         let sYear = dParts[2];
@@ -1516,7 +1520,12 @@
       let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => b.receiptId.localeCompare(a.receiptId));
 
       sortedSales.forEach(s => {
-        let sMonth = s.date.split('/')[1] + "/" + s.date.split('/')[2];
+        // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate นับยอดขายเดือนที่ได้รับเงินจริง
+        let effectiveDate = s.date;
+        if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
+          effectiveDate = s.completedDate;
+        }
+        let sMonth = effectiveDate.split('/')[1] + "/" + effectiveDate.split('/')[2];
         if (sMonth === targetMonth) {
           totalQty += Number(s.qty);
           totalCost += Number(s.totalCost);
@@ -1694,11 +1703,13 @@
         html: `
           <div class="text-start">
             <label class="small fw-bold mb-1">ชื่อลูกค้า</label>
-            <input id="edit_cusName" class="swal2-input" value="${s.cusName || ''}"พลาซหอลดเดอร์="ชื่อลูกค้า">
+            <input id="edit_cusName" class="swal2-input" value="${s.cusName || ''}" placeholder="ชื่อลูกค้า">
             <label class="small fw-bold mb-1">ที่อยู่/เบอร์โทรศัพท์</label>
             <input id="edit_address" class="swal2-input" value="${s.address || ''}" placeholder="ที่อยู่/เบอร์โทรศัพท์">
             <label class="small fw-bold mb-1">ราคาขายจริง (ยอดรวมทั้งสิ้น)</label>
             <input id="edit_grandTotal" class="swal2-input" type="number" value="${Number(s.totalSales)}" placeholder="ยอดรวม">
+            <label class="small fw-bold mb-1">ค่าขนส่ง (บาท)</label>
+            <input id="edit_shippingCost" class="swal2-input" type="number" value="${Number(s.shippingCost || 0)}" placeholder="ค่าขนส่ง" min="0">
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'บันทึกการแก้ไข',
@@ -1706,14 +1717,23 @@
         preConfirm: () => ({
           cusName: document.getElementById('edit_cusName').value,
           address: document.getElementById('edit_address').value,
-          grandTotal: Number(document.getElementById('edit_grandTotal').value)
+          grandTotal: Number(document.getElementById('edit_grandTotal').value),
+          shippingCost: Number(document.getElementById('edit_shippingCost').value) || 0
         })
       });
       if (!formValues) return;
       Swal.showLoading();
       try {
+        // คำนวณกำไรใหม่: กำไร = ยอดขายก่อน VAT - ต้นทุน - ค่าขนส่ง
+        let newProfit = Number(s.subTotal) - Number(s.totalCost) - formValues.shippingCost;
         const { error } = await supabaseClient.from('sales')
-          .update({ cus_name: formValues.cusName, address: formValues.address, grand_total: formValues.grandTotal })
+          .update({ 
+            cus_name: formValues.cusName, 
+            address: formValues.address, 
+            grand_total: formValues.grandTotal,
+            shipping_cost: formValues.shippingCost,
+            profit: newProfit
+          })
           .eq('invoice_id', s.receiptId);
         if (error) throw error;
         Swal.fire('สำเร็จ!', 'อัปเดตเรียบร้อย', 'success');
@@ -1759,6 +1779,8 @@
           if (sale) {
             updateData.deposit_amount = sale.totalSales;
             updateData.deposit_remaining = 0;
+            // บันทึกวันที่ชำระครบ เพื่อนับยอดขายตามเดือนที่รับเงินจริง
+            updateData.completed_date = new Date().toISOString().split('T')[0];
           }
         }
 
@@ -1807,12 +1829,17 @@
 
         Swal.showLoading();
         try {
+          let updateData = { deposit_amount: newDeposit, deposit_remaining: newRemaining };
+          // ถ้าชำระครบ → บันทึก completed_date เป็นวันที่ปัจจุบัน (เดือนที่รับเงิน)
+          if (newRemaining === 0) {
+            updateData.completed_date = new Date().toISOString().split('T')[0];
+          }
           const { error } = await supabaseClient.from('sales')
-            .update({ deposit_amount: newDeposit, deposit_remaining: newRemaining })
+            .update(updateData)
             .eq('invoice_id', receiptId);
           if (error) throw error;
 
-          let statusMsg = newRemaining === 0 ? 'ชำระครบเต็มจำนวนแล้ว!' : `ชำระเพิ่ม ฿${Number(payAmount).toLocaleString()} สำเร็จ\nยอดคงเหลือ: ฿${newRemaining.toLocaleString()}`;
+          let statusMsg = newRemaining === 0 ? 'ชำระครบเต็มจำนวนแล้ว! ยอดขายจะนับเป็นของเดือนนี้' : `ชำระเพิ่ม ฿${Number(payAmount).toLocaleString()} สำเร็จ\nยอดคงเหลือ: ฿${newRemaining.toLocaleString()}`;
           Swal.fire('สำเร็จ!', statusMsg, 'success');
           refreshAllData();
         } catch (error) {
