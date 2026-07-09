@@ -495,6 +495,7 @@
                 <th class="text-success">ราคาขาย/หน่วย</th>
                 <th>จำนวนที่เหลือ</th>
                 <th class="text-primary">มูลค่ารวม (บาท)</th>
+                <th>สถานะ (COD/มัดจำ)</th>
               </tr>
             </thead>
             <tbody id="inStockSummaryData" class="text-center"></tbody>
@@ -963,6 +964,28 @@
             </table>
           </div>
         </div>
+
+        <div class="row mt-4" id="txSummarySection">
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-success border-4 h-100 bg-white">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-arrow-down-up-across-line text-success me-1"></i> รวมรายรับ (Income)</h6>
+              <h3 class="fw-bold text-success m-0" id="txSumIncome">฿0</h3>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-danger border-4 h-100 bg-white">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-arrow-up-right-from-square text-danger me-1"></i> รวมรายจ่าย (Expense)</h6>
+              <h3 class="fw-bold text-danger m-0" id="txSumExpense">฿0</h3>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-primary border-4 h-100 bg-white">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-scale-balanced text-primary me-1"></i> คงเหลือสุทธิ (Net Balance)</h6>
+              <h3 class="fw-bold text-primary m-0" id="txSumBalance">฿0</h3>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1526,7 +1549,12 @@
 
     function renderInStockSummary() {
       // ดึงเฉพาะสินค้าที่สต๊อก > 0 และไม่สน filter ใดๆ
-      let inStockProducts = globalProducts.filter(p => p.stock > 0);
+      let inStockProducts = globalProducts.filter(p => {
+        if (p.stock > 0) return true;
+        let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+        let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+        return pendingCodSales.length > 0 || depositSales.length > 0;
+      });
       inStockProducts.sort((a,b) => (a.brand || '').localeCompare(b.brand || '') || (a.name || '').localeCompare(b.name || ''));
       
       let html = '';
@@ -1534,17 +1562,34 @@
       let totalValue = 0;
 
       if (inStockProducts.length === 0) {
-         html = '<tr><td colspan="5" class="text-muted">ไม่มีสินค้าคงเหลือในระบบ</td></tr>';
+         html = '<tr><td colspan="6" class="text-muted">ไม่มีสินค้าคงเหลือในระบบ</td></tr>';
          document.getElementById('inStockSummaryFooter').innerHTML = '';
       } else {
          html = inStockProducts.map(p => {
             let value = p.stock * p.actualPrice;
             totalQty += p.stock;
             totalValue += value;
-            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td></tr>`;
+
+            let depositStatus = '';
+            let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+            let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+            
+            if (pendingCodSales.length > 0) {
+              let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
+              depositStatus += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> รอ COD ${totalCodQty} เครื่อง</span><br>`;
+            }
+            if (depositSales.length > 0) {
+              let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
+              depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
+            }
+            if (!depositStatus) {
+              depositStatus = '<span class="text-muted">-</span>';
+            }
+
+            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td><td>${depositStatus}</td></tr>`;
          }).join('');
          
-         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td></tr>`;
+         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td><td></td></tr>`;
       }
       document.getElementById('inStockSummaryData').innerHTML = html;
     }
@@ -2360,6 +2405,19 @@
             source: 'sale'
           });
         }
+
+        let shipId = s.receiptId + '-SHIP';
+        if (Number(s.shippingCost) > 0 && !manualIds.has(shipId)) {
+          combined.push({
+            id: shipId,
+            date: s.date || "01/01/2000",
+            type: 'รายจ่าย',
+            category: 'ค่าขนส่ง: ' + s.productName,
+            amount: Number(s.shippingCost),
+            note: 'ค่าขนส่งพัสดุ (อ้างอิงรหัสขาย: ' + s.receiptId + ')',
+            source: 'shipping'
+          });
+        }
       });
 
       globalProducts.forEach(p => {
@@ -2396,6 +2454,9 @@
 
       let html = '';
       let allTx = getAllTransactions();
+      let sumIncome = 0;
+      let sumExpense = 0;
+
       // เรียงจากใหม่ไปเก่า
       let sortedTx = allTx.sort((a, b) => {
         let dateA = a.date.split('/').reverse().join('');
@@ -2408,6 +2469,9 @@
         let parts = t.date.split('/');
         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
         if (tMonth === targetMonth) {
+          if (t.type === 'รายรับ') sumIncome += Number(t.amount);
+          if (t.type === 'รายจ่าย') sumExpense += Number(t.amount);
+
           let actionButtons = `
             <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
             <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
@@ -2428,6 +2492,21 @@
         }
       });
       document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
+
+      if (document.getElementById('txSumIncome')) {
+         document.getElementById('txSumIncome').innerText = '฿' + sumIncome.toLocaleString();
+         document.getElementById('txSumExpense').innerText = '฿' + sumExpense.toLocaleString();
+         let balance = sumIncome - sumExpense;
+         let balEl = document.getElementById('txSumBalance');
+         balEl.innerText = '฿' + balance.toLocaleString();
+         if (balance >= 0) {
+            balEl.classList.remove('text-danger');
+            balEl.classList.add('text-primary');
+         } else {
+            balEl.classList.remove('text-primary');
+            balEl.classList.add('text-danger');
+         }
+      }
     }
 
     function printTxReport() {
