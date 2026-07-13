@@ -1,4 +1,4 @@
-﻿
+
     if (sessionStorage.getItem('isLoggedIn') !== 'true') {
       window.location.replace('login.html');
     }
@@ -12,7 +12,7 @@
     let mySalesChart = null;
     let myProfitChart = null;
 
-    // Helper: เนเธเธฅเธเธงเธฑเธเธ—เธตเน YYYY-MM-DD เน€เธเนเธ DD/MM/YYYY (เธชเธณเธซเธฃเธฑเธเนเธชเธ”เธเธเธฅ)
+    // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY (สำหรับแสดงผล)
     function formatDateToTH(dateString) {
       if (!dateString) return "";
       if (dateString.includes('/')) return dateString;
@@ -21,7 +21,7 @@
       return dateString;
     }
 
-    // Helper: เนเธเธฅเธเธงเธฑเธเธ—เธตเน DD/MM/YYYY เน€เธเนเธ YYYY-MM-DD (เธชเธณเธซเธฃเธฑเธเธเธฑเธเธ—เธถเธ DB)
+    // Helper: แปลงวันที่ DD/MM/YYYY เป็น YYYY-MM-DD (สำหรับบันทึก DB)
     function formatDateToDB(dateString) {
       if (!dateString) return null;
       if (dateString.includes('-') && !dateString.includes('/')) return dateString; // already YYYY-MM-DD
@@ -32,14 +32,14 @@
 
     function logout() {
       Swal.fire({
-        title: 'เธญเธญเธเธเธฒเธเธฃเธฐเธเธ',
-        text: 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธญเธญเธเธเธฒเธเธฃเธฐเธเธเนเธเนเธซเธฃเธทเธญเนเธกเน?',
+        title: 'ออกจากระบบ',
+        text: 'คุณต้องการออกจากระบบใช่หรือไม่?',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'เนเธเน, เธญเธญเธเธเธฒเธเธฃเธฐเธเธ',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ'
+        confirmButtonText: 'ใช่, ออกจากระบบ',
+        cancelButtonText: 'ยกเลิก'
       }).then((result) => {
         if (result.isConfirmed) {
           sessionStorage.removeItem('isLoggedIn');
@@ -49,8 +49,8 @@
     }
 
     // Helper: map Supabase snake_case fields to local camelCase
-    // sales.date & transactions.date เน€เธเนเธ type `date` (YYYY-MM-DD) เธเธฒเธ Supabase
-    // เนเธเธฅเธเน€เธเนเธ DD/MM/YYYY เธชเธณเธซเธฃเธฑเธเนเธชเธ”เธเธเธฅเนเธ UI
+    // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
+    // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
     function mapProduct(p) {
       return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
     }
@@ -87,7 +87,7 @@
       }
 
       try {
-        // เธ”เธถเธเธเนเธญเธกเธนเธฅเธ—เธฑเนเธเธซเธกเธ”เธเธฒเธ Supabase เธเธฃเนเธญเธกเธเธฑเธ
+        // ดึงข้อมูลทั้งหมดจาก Supabase พร้อมกัน
         const [prodRes, salesRes, txRes] = await Promise.all([
           supabaseClient.from('products').select('*'),
           supabaseClient.from('sales').select('*'),
@@ -110,7 +110,7 @@
         renderTransactionsTable();
       } catch (error) {
         console.error("Error fetching data:", error);
-        Swal.fire('เนเธเนเธเน€เธ•เธทเธญเธ', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเธทเนเธญเธกเธ•เนเธญเธเธฒเธเธเนเธญเธกเธนเธฅเนเธ”เน เธเธฃเธธเธ“เธฒเธ•เธฃเธงเธเธชเธญเธเธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ Supabase', 'error');
+        Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Supabase', 'error');
       }
     }
 
@@ -130,7 +130,7 @@
 
       function getBrandByPid(pid) {
         let prod = globalProducts.find(p => p.id === pid);
-        return prod ? prod.brand : 'เนเธกเนเธฃเธฐเธเธธ';
+        return prod ? prod.brand : 'ไม่ระบุ';
       }
 
 
@@ -140,13 +140,13 @@
         totalStock += p.stock;
         invValue += (p.cost * p.stock);
         if (p.stock > 0 && p.stock < 3 && lowStockCount < 10) {
-          lowStockHtml += `<tr><td>${p.name}</td><td class="text-center text-danger fw-bold">${p.stock} เธเธดเนเธ</td></tr>`;
+          lowStockHtml += `<tr><td>${p.name}</td><td class="text-center text-danger fw-bold">${p.stock} ชิ้น</td></tr>`;
           lowStockCount++;
         }
       });
 
       let count = 0;
-      // เน€เธฃเธตเธขเธเธเธฒเธเนเธซเธกเนเนเธเน€เธเนเธฒ เนเธ”เธขเนเธเน createdAt เนเธฅเธฐเธ•เธฑเธ”เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธขเธเน€เธฅเธดเธเธญเธญเธ
+      // เรียงจากใหม่ไปเก่า โดยใช้ createdAt และตัดรายการที่ยกเลิกออก
       let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => {
         let dateA = new Date(a.createdAt).getTime();
         let dateB = new Date(b.createdAt).getTime();
@@ -156,7 +156,7 @@
       });
 
       sortedSales.forEach(s => {
-        // เธชเธณเธซเธฃเธฑเธเธฃเธฒเธขเธเธฒเธฃเธกเธฑเธ”เธเธณเธ—เธตเนเธเธณเธฃเธฐเธเธฃเธเนเธฅเนเธง เนเธเน completedDate เน€เธเนเธเธงเธฑเธเธ—เธตเนเธเธฑเธเธขเธญเธ”
+        // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate เป็นวันที่นับยอด
         let effectiveDate = s.date;
         if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
           effectiveDate = s.completedDate;
@@ -183,7 +183,7 @@
         yearlySales[sYear] = (yearlySales[sYear] || 0) + Number(s.totalSales);
 
         if (count < 5) {
-          recentHtml += `<tr><td>${s.date}</td><td class="text-start text-truncate" style="max-width:180px;">${s.productName}</td><td class="text-orange fw-bold">เธฟ${Number(s.totalSales).toLocaleString()}</td><td class="text-success">เธฟ${Number(s.profit).toLocaleString()}</td></tr>`;
+          recentHtml += `<tr><td>${s.date}</td><td class="text-start text-truncate" style="max-width:180px;">${s.productName}</td><td class="text-orange fw-bold">฿${Number(s.totalSales).toLocaleString()}</td><td class="text-success">฿${Number(s.profit).toLocaleString()}</td></tr>`;
           count++;
         }
       });
@@ -197,30 +197,30 @@
         }
       }
 
-      document.getElementById('dashSales').innerText = "เธฟ" + mSales.toLocaleString();
-      document.getElementById('dashProfit').innerText = "เธฟ" + mProfit.toLocaleString();
-      document.getElementById('dashQty').innerText = mQty + " เน€เธเธฃเธทเนเธญเธ";
+      document.getElementById('dashSales').innerText = "฿" + mSales.toLocaleString();
+      document.getElementById('dashProfit').innerText = "฿" + mProfit.toLocaleString();
+      document.getElementById('dashQty').innerText = mQty + " เครื่อง";
       document.getElementById('dashBestBrand').innerText = bestBrand !== "-" ? bestBrand : "-";
-      document.getElementById('dashYearSales').innerText = "เธฟ" + ySales.toLocaleString();
-      document.getElementById('dashStock').innerText = totalStock + " เธเธดเนเธ";
-      document.getElementById('dashInventoryValue').innerText = "เธฟ" + invValue.toLocaleString();
-      document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">เนเธกเนเธกเธตเธฃเธฒเธขเธเธฒเธฃเธเธฒเธขเนเธเน€เธ”เธทเธญเธเธเธตเน</td></tr>';
+      document.getElementById('dashYearSales').innerText = "฿" + ySales.toLocaleString();
+      document.getElementById('dashStock').innerText = totalStock + " ชิ้น";
+      document.getElementById('dashInventoryValue').innerText = "฿" + invValue.toLocaleString();
+      document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">ไม่มีรายการขายในเดือนนี้</td></tr>';
 
-      // เธเธณเธเธงเธ“เธขเธญเธ”เธเนเธฒเธเธเธณเธฃเธฐ COD เนเธฅเธฐเธกเธฑเธ”เธเธณ
+      // คำนวณยอดค้างชำระ COD และมัดจำ
       let codPending = 0, depositPending = 0;
       globalSales.forEach(s => {
         if (s.status === 'PENDING_COD') codPending += Number(s.depositRemaining);
         if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0) depositPending += Number(s.depositRemaining);
       });
-      document.getElementById('dashCodPending').innerText = "เธฟ" + codPending.toLocaleString();
-      document.getElementById('dashDepositPending').innerText = "เธฟ" + depositPending.toLocaleString();
-      document.getElementById('dashMonthlyShipping').innerText = "เธฟ" + mShipping.toLocaleString();
+      document.getElementById('dashCodPending').innerText = "฿" + codPending.toLocaleString();
+      document.getElementById('dashDepositPending').innerText = "฿" + depositPending.toLocaleString();
+      document.getElementById('dashMonthlyShipping').innerText = "฿" + mShipping.toLocaleString();
 
       if (lowStockCount > 0) {
-        if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...เธกเธตเธชเธดเธเธเนเธฒเธญเธทเนเธเนเธเธฅเนเธซเธกเธ”เธญเธตเธ</td></tr>`;
+        if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
         document.getElementById('dashLowStock').innerHTML = lowStockHtml;
       } else {
-        document.getElementById('dashLowStock').innerHTML = '<tr><td colspan="2" class="text-success text-center">เธชเธดเธเธเนเธฒเน€เธเธตเธขเธเธเธญเธ—เธธเธเธฃเธฒเธขเธเธฒเธฃ</td></tr>';
+        document.getElementById('dashLowStock').innerHTML = '<tr><td colspan="2" class="text-success text-center">สินค้าเพียงพอทุกรายการ</td></tr>';
       }
 
       renderCharts(targetYear, monthlySales, yearlySales);
@@ -228,7 +228,7 @@
 
     function renderCharts(targetYear, monthlySales, yearlySales) {
       // Data for Monthly Sales
-      let monthLabels = ["เธก.เธ.", "เธ.เธ.", "เธกเธต.เธ.", "เน€เธก.เธข.", "เธ.เธ.", "เธกเธด.เธข.", "เธ.เธ.", "เธช.เธ.", "เธ.เธข.", "เธ•.เธ.", "เธ.เธข.", "เธ.เธ."];
+      let monthLabels = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
       let mSalesData = [];
       for (let i = 1; i <= 12; i++) {
         let mStr = ("0" + i).slice(-2);
@@ -249,7 +249,7 @@
         type: 'bar',
         data: {
           labels: monthLabels,
-          datasets: [{ label: 'เธขเธญเธ”เธเธฒเธขเธฃเธฒเธขเน€เธ”เธทเธญเธ (เธเธฒเธ—)', data: mSalesData, backgroundColor: 'rgba(249, 115, 22, 0.8)', borderRadius: 4 }]
+          datasets: [{ label: 'ยอดขายรายเดือน (บาท)', data: mSalesData, backgroundColor: 'rgba(249, 115, 22, 0.8)', borderRadius: 4 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
@@ -258,7 +258,7 @@
         type: 'line',
         data: {
           labels: yearLabels,
-          datasets: [{ label: 'เธขเธญเธ”เธเธฒเธขเธฃเธฒเธขเธเธต (เธเธฒเธ—)', data: ySalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
+          datasets: [{ label: 'ยอดขายรายปี (บาท)', data: ySalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
@@ -282,7 +282,7 @@
         let currentBrand = brandFilterEl.value;
         let brandSet = new Set();
         globalProducts.forEach(p => brandSet.add(p.brand));
-        let brandOptionsHtml = '<option value="">-- เธขเธตเนเธซเนเธญเธ—เธฑเนเธเธซเธกเธ” --</option>';
+        let brandOptionsHtml = '<option value="">-- ยี่ห้อทั้งหมด --</option>';
         brandSet.forEach(b => { if (b) brandOptionsHtml += `<option value="${b}">${b}</option>`; });
         brandFilterEl.innerHTML = brandOptionsHtml;
         brandFilterEl.value = currentBrand;
@@ -300,35 +300,35 @@
 
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
-        // เธ•เธฃเธงเธเธชเธญเธเธชเธ–เธฒเธเธฐเธกเธฑเธ”เธเธณเนเธฅเธฐ COD เธเธฒเธเธเนเธญเธกเธนเธฅเธเธฒเธฃเธเธฒเธข
+        // ตรวจสอบสถานะมัดจำและ COD จากข้อมูลการขาย
         let depositStatus = '';
         let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
         let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
         
         if (pendingCodSales.length > 0) {
           let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
-          depositStatus += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> เธฃเธญ COD ${totalCodQty} เน€เธเธฃเธทเนเธญเธ</span><br>`;
+          depositStatus += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> รอ COD ${totalCodQty} เครื่อง</span><br>`;
         }
         
         if (depositSales.length > 0) {
           let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
-          depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> เธ•เธดเธ”เธกเธฑเธ”เธเธณ</span><br><small class="text-danger fw-bold">เธเนเธฒเธ เธฟ${totalRemaining.toLocaleString()}</small>`;
+          depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
         }
         
         if (!depositStatus) {
           depositStatus = '<span class="text-muted">-</span>';
         }
-        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="เธ”เธนเนเธเธชเธ•เนเธเธ Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">เธฟ${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เน€เธเธฃเธทเนเธญเธ</td><td>${fbBtn}</td><td>${depositStatus}</td></tr>`;
+        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
+        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td><td>${fbBtn}</td><td>${depositStatus}</td></tr>`;
       }).join('');
       }).join('');
-      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="8" class="text-muted">เนเธกเนเธกเธตเธฃเธฒเธขเธเธฒเธฃเธชเธดเธเธเนเธฒเนเธเธฃเธฐเธเธเธ•เธฒเธกเน€เธเธทเนเธญเธเนเธเธ—เธตเนเน€เธฅเธทเธญเธ</td></tr>';
+      document.getElementById('viewData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีรายการสินค้าในระบบตามเงื่อนไขที่เลือก</td></tr>';
 
       renderInStockSummary();
     }
 
     function renderInStockSummary() {
-      // เธ”เธถเธเน€เธเธเธฒเธฐเธชเธดเธเธเนเธฒเธ—เธตเนเธชเธ•เนเธญเธ > 0 เนเธฅเธฐเนเธกเนเธชเธ filter เนเธ”เน
+      // ดึงเฉพาะสินค้าที่สต๊อก > 0 และไม่สน filter ใดๆ
       let inStockProducts = globalProducts.filter(p => p.stock > 0);
       inStockProducts.sort((a,b) => (a.brand || '').localeCompare(b.brand || '') || (a.name || '').localeCompare(b.name || ''));
       
@@ -337,17 +337,17 @@
       let totalValue = 0;
 
       if (inStockProducts.length === 0) {
-         html = '<tr><td colspan="5" class="text-muted">เนเธกเนเธกเธตเธชเธดเธเธเนเธฒเธเธเน€เธซเธฅเธทเธญเนเธเธฃเธฐเธเธ</td></tr>';
+         html = '<tr><td colspan="5" class="text-muted">ไม่มีสินค้าคงเหลือในระบบ</td></tr>';
          document.getElementById('inStockSummaryFooter').innerHTML = '';
       } else {
          html = inStockProducts.map(p => {
             let value = p.stock * p.actualPrice;
             totalQty += p.stock;
             totalValue += value;
-            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">เธฟ${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">เธฟ${value.toLocaleString()}</td></tr>`;
+            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td></tr>`;
          }).join('');
          
-         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">เธฃเธงเธกเธฃเธฒเธขเธเธฒเธฃเธชเธดเธเธเนเธฒเธเธเน€เธซเธฅเธทเธญเธ—เธฑเนเธเธซเธกเธ”:</td><td class="text-dark fs-5">${totalQty} เน€เธเธฃเธทเนเธญเธ</td><td class="text-primary fs-4">เธฟ${totalValue.toLocaleString()}</td></tr>`;
+         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td></tr>`;
       }
       document.getElementById('inStockSummaryData').innerHTML = html;
     }
@@ -374,7 +374,7 @@
         let currentBrand = brandFilterEl.value;
         let brandSet = new Set();
         globalProducts.forEach(p => brandSet.add(p.brand));
-        let brandOptionsHtml = '<option value="">-- เธขเธตเนเธซเนเธญเธ—เธฑเนเธเธซเธกเธ” --</option>';
+        let brandOptionsHtml = '<option value="">-- ยี่ห้อทั้งหมด --</option>';
         brandSet.forEach(b => { if (b) brandOptionsHtml += `<option value="${b}">${b}</option>`; });
         brandFilterEl.innerHTML = brandOptionsHtml;
         brandFilterEl.value = currentBrand;
@@ -392,15 +392,15 @@
 
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
-        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="เธ”เธนเนเธเธชเธ•เนเธเธ Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>เธฟ${p.cost.toLocaleString()}</td><td class="text-success">เธฟ${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="เธเธดเธกเธเนเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒ"><i class="fa-solid fa-print"></i></button></td></tr>`;
+        let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
+        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button></td></tr>`;
       }).join('');
-      document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">เนเธกเนเธกเธตเธชเธดเธเธเนเธฒเธ•เธฒเธกเน€เธเธทเนเธญเธเนเธเธ—เธตเนเธเนเธเธซเธฒ</td></tr>';
+      document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
 
     function printProductDetail(productId) {
       let p = globalProducts.find(x => String(x.id) === String(productId));
-      if (!p) { Swal.fire('เนเธกเนเธเธเธเนเธญเธกเธนเธฅ', 'เนเธกเนเธเธเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃเธเธดเธกเธเน', 'error'); return; }
+      if (!p) { Swal.fire('ไม่พบข้อมูล', 'ไม่พบข้อมูลสินค้าที่ต้องการพิมพ์', 'error'); return; }
 
       let today = new Date();
       let printDate = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
@@ -414,20 +414,20 @@
       document.getElementById('pdBrand').innerText = p.brand;
       document.getElementById('pdProductId').innerText = p.id;
       document.getElementById('pdDate').innerText = dateStr;
-      document.getElementById('pdCost').innerText = 'เธฟ' + p.cost.toLocaleString();
-      document.getElementById('pdSellPrice').innerText = 'เธฟ' + p.actualPrice.toLocaleString();
+      document.getElementById('pdCost').innerText = '฿' + p.cost.toLocaleString();
+      document.getElementById('pdSellPrice').innerText = '฿' + p.actualPrice.toLocaleString();
 
       let profitEl = document.getElementById('pdProfitPerUnit');
-      profitEl.innerText = 'เธฟ' + profitPerUnit.toLocaleString();
+      profitEl.innerText = '฿' + profitPerUnit.toLocaleString();
       profitEl.className = 'fw-bold ' + (profitPerUnit >= 0 ? 'text-success' : 'text-danger');
 
       let stockEl = document.getElementById('pdStock');
-      stockEl.innerHTML = `<span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-success'}">${p.stock}</span> เธเธดเนเธ`;
+      stockEl.innerHTML = `<span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-success'}">${p.stock}</span> ชิ้น`;
 
-      document.getElementById('pdTotalCostValue').innerText = 'เธฟ' + totalCostValue.toLocaleString();
-      document.getElementById('pdTotalCostCalc').innerText = `(เธฟ${p.cost.toLocaleString()} ร— ${p.stock} เธเธดเนเธ)`;
-      document.getElementById('pdTotalSellValue').innerText = 'เธฟ' + totalSellValue.toLocaleString();
-      document.getElementById('pdTotalSellCalc').innerText = `(เธฟ${p.actualPrice.toLocaleString()} ร— ${p.stock} เธเธดเนเธ)`;
+      document.getElementById('pdTotalCostValue').innerText = '฿' + totalCostValue.toLocaleString();
+      document.getElementById('pdTotalCostCalc').innerText = `(฿${p.cost.toLocaleString()} × ${p.stock} ชิ้น)`;
+      document.getElementById('pdTotalSellValue').innerText = '฿' + totalSellValue.toLocaleString();
+      document.getElementById('pdTotalSellCalc').innerText = `(฿${p.actualPrice.toLocaleString()} × ${p.stock} ชิ้น)`;
 
       if (p.fbLink) {
         document.getElementById('pdFbLinkRow').style.display = 'block';
@@ -442,17 +442,17 @@
     }
 
     function renderSalesTab() {
-      let selectHtml = '<option value="">-- เน€เธฅเธทเธญเธเธฃเธฒเธขเธเธฒเธฃเธชเธดเธเธเนเธฒเน€เธเธทเนเธญเธ—เธณเธเธฒเธฃเธ•เธฑเธ”เธชเธ•เนเธญเธ --</option>';
+      let selectHtml = '<option value="">-- เลือกรายการสินค้าเพื่อทำการตัดสต็อก --</option>';
       let brandSet = new Set();
       globalProducts.forEach(p => {
         if (p.stock > 0) {
-          selectHtml += `<option value="${p.id}" data-price="${p.actualPrice}">${p.name} (เธเธเน€เธซเธฅเธทเธญ: ${p.stock} | เนเธเธฃเธเธ”เน: ${p.brand})</option>`;
+          selectHtml += `<option value="${p.id}" data-price="${p.actualPrice}">${p.name} (คงเหลือ: ${p.stock} | แบรนด์: ${p.brand})</option>`;
         }
         brandSet.add(p.brand);
       });
       document.getElementById('saleProduct').innerHTML = selectHtml;
 
-      let filterBrandHtml = '<option value="">เนเธเธฃเธเธ”เนเธชเธดเธเธเนเธฒเธ—เธฑเนเธเธซเธกเธ”</option>';
+      let filterBrandHtml = '<option value="">แบรนด์สินค้าทั้งหมด</option>';
       brandSet.forEach(b => { if (b) filterBrandHtml += `<option value="${b}">${b}</option>`; });
       document.getElementById('filterBrand').innerHTML = filterBrandHtml;
 
@@ -477,7 +477,7 @@
         return a.name.localeCompare(b.name);
       });
 
-      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>เธฟ${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger' : 'bg-success'}">${p.stock}</span></td></tr>`).join('');
+      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger' : 'bg-success'}">${p.stock}</span></td></tr>`).join('');
     }
 
     function calcVAT() {
@@ -519,12 +519,12 @@
       e.preventDefault();
 
       let pId = document.getElementById('saleProduct').value;
-      if (!pId) { Swal.fire('เน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธชเธดเธเธเนเธฒเธเนเธญเธเธเธฑเธเธ—เธถเธเธเธฒเธข', 'warning'); return; }
+      if (!pId) { Swal.fire('เตือน', 'กรุณาเลือกสินค้าก่อนบันทึกขาย', 'warning'); return; }
 
       let qty = Number(document.getElementById('saleQty').value);
       let product = globalProducts.find(p => p.id === pId);
 
-      if (qty > product.stock) { Swal.fire('เน€เธ•เธทเธญเธ', 'เธชเธดเธเธเนเธฒเธเธเน€เธซเธฅเธทเธญเนเธกเนเธเธญเธเธฒเธข!', 'warning'); return; }
+      if (qty > product.stock) { Swal.fire('เตือน', 'สินค้าคงเหลือไม่พอขาย!', 'warning'); return; }
 
       let customPrice = Number(document.getElementById('saleCustomPrice').value);
       let subTotal = customPrice * qty;
@@ -544,12 +544,12 @@
 
       if (paymentMethod === 'DEPOSIT') {
         depositAmt = Number(document.getElementById('depositAmount').value) || 0;
-        if (depositAmt <= 0) { Swal.fire('เน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธขเธญเธ”เธกเธฑเธ”เธเธณ', 'warning'); return; }
-        if (depositAmt >= totalSales) { Swal.fire('เน€เธ•เธทเธญเธ', 'เธขเธญเธ”เธกเธฑเธ”เธเธณเธ•เนเธญเธเธเนเธญเธขเธเธงเนเธฒเธขเธญเธ”เธฃเธงเธก เธซเธฒเธเธเนเธฒเธขเน€เธ•เนเธกเธเธณเธเธงเธเนเธซเนเน€เธฅเธทเธญเธเธเธณเธฃเธฐเน€เธ•เนเธกเธเธณเธเธงเธ', 'warning'); return; }
+        if (depositAmt <= 0) { Swal.fire('เตือน', 'กรุณากรอกยอดมัดจำ', 'warning'); return; }
+        if (depositAmt >= totalSales) { Swal.fire('เตือน', 'ยอดมัดจำต้องน้อยกว่ายอดรวม หากจ่ายเต็มจำนวนให้เลือกชำระเต็มจำนวน', 'warning'); return; }
         depositRemaining = totalSales - depositAmt;
       } else if (paymentMethod === 'COD') {
         depositAmt = 0;
-        depositRemaining = totalSales; // เธเนเธฒเธเธเธณเธฃเธฐเน€เธ•เนเธกเธเธณเธเธงเธเธชเธณเธซเธฃเธฑเธ COD
+        depositRemaining = totalSales; // ค้างชำระเต็มจำนวนสำหรับ COD
         orderStatus = 'PENDING_COD';
       } else {
         // CASH
@@ -580,23 +580,23 @@
       Swal.showLoading();
 
       try {
-        // 1. เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธฒเธข
+        // 1. บันทึกการขาย
         const { error: saleErr } = await supabaseClient.from('sales').insert([saleData]);
         if (saleErr) throw saleErr;
 
-        // 2. เธ•เธฑเธ”เธชเธ•เนเธญเธ
+        // 2. ตัดสต็อก
         const { error: stockErr } = await supabaseClient.from('products')
           .update({ stock: product.stock - qty })
           .eq('id', pId);
         if (stockErr) throw stockErr;
 
-        let successMsg = 'เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธฒเธขเนเธฅเธฐเธ•เธฑเธ”เธชเธ•เนเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธข';
+        let successMsg = 'บันทึกการขายและตัดสต็อกเรียบร้อย';
         if (paymentMethod === 'DEPOSIT') {
-          successMsg = `เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธฒเธข (เธกเธฑเธ”เธเธณ เธฟ${depositAmt.toLocaleString()}) เนเธฅเธฐเธ•เธฑเธ”เธชเธ•เนเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธข\nเธขเธญเธ”เธเธเน€เธซเธฅเธทเธญ: เธฟ${depositRemaining.toLocaleString()}`;
+          successMsg = `บันทึกการขาย (มัดจำ ฿${depositAmt.toLocaleString()}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${depositRemaining.toLocaleString()}`;
         } else if (paymentMethod === 'COD') {
-          successMsg = `เธเธฑเธเธ—เธถเธเธญเธญเน€เธ”เธญเธฃเน COD เนเธฅเธฐเธ•เธฑเธ”เธชเธ•เนเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธข\nเธชเธ–เธฒเธเธฐ: เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ`;
+          successMsg = `บันทึกออเดอร์ COD และตัดสต็อกเรียบร้อย\nสถานะ: รอดำเนินการ`;
         }
-        Swal.fire('เธชเธณเน€เธฃเนเธ!', successMsg, 'success');
+        Swal.fire('สำเร็จ!', successMsg, 'success');
         document.getElementById('formSale').reset();
         document.getElementById('payCash').checked = true;
         if(document.getElementById('isVatEnabled')) document.getElementById('isVatEnabled').checked = true;
@@ -605,7 +605,7 @@
         refreshAllData();
       } catch (error) {
         console.error(error);
-        Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธฒเธขเนเธ”เน', 'error');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการขายได้', 'error');
       }
     }
 
@@ -616,11 +616,11 @@
       let totalQty = 0, totalCost = 0, totalSub = 0, totalProfit = 0;
       let historyHtml = '';
 
-      // เน€เธฃเธตเธขเธเธเธฒเธเนเธซเธกเนเนเธเน€เธเนเธฒ เนเธฅเธฐเธ•เธฑเธ”เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธ–เธนเธเธขเธเน€เธฅเธดเธ/เธ•เธตเธเธฅเธฑเธเธญเธญเธ
+      // เรียงจากใหม่ไปเก่า และตัดรายการที่ถูกยกเลิก/ตีกลับออก
       let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => b.receiptId.localeCompare(a.receiptId));
 
       sortedSales.forEach(s => {
-        // เธชเธณเธซเธฃเธฑเธเธฃเธฒเธขเธเธฒเธฃเธกเธฑเธ”เธเธณเธ—เธตเนเธเธณเธฃเธฐเธเธฃเธเนเธฅเนเธง เนเธเน completedDate เธเธฑเธเธขเธญเธ”เธเธฒเธขเน€เธ”เธทเธญเธเธ—เธตเนเนเธ”เนเธฃเธฑเธเน€เธเธดเธเธเธฃเธดเธ
+        // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate นับยอดขายเดือนที่ได้รับเงินจริง
         let effectiveDate = s.date;
         if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
           effectiveDate = s.completedDate;
@@ -634,7 +634,7 @@
 
           let saleStr = JSON.stringify(s).replace(/'/g, "\\'");
 
-          // เนเธชเธ”เธเธเนเธญเธกเธนเธฅเธชเธ–เธฒเธเธฐ
+          // แสดงข้อมูลสถานะ
           let depositCol = '-';
           let remainCol = '-';
           let actionBtns = '';
@@ -642,33 +642,33 @@
           let trClass = '';
           if (s.status === 'CANCELLED') {
             trClass = 'table-danger text-decoration-line-through text-muted';
-            depositCol = `<span class="badge bg-danger"><i class="fa-solid fa-xmark"></i> เธ•เธตเธเธฅเธฑเธ/เธขเธเน€เธฅเธดเธ</span>`;
+            depositCol = `<span class="badge bg-danger"><i class="fa-solid fa-xmark"></i> ตีกลับ/ยกเลิก</span>`;
           } else if (s.paymentMethod === 'COD') {
             if (s.status === 'PENDING_COD') {
               trClass = 'table-info';
-              depositCol = `<span class="badge bg-info text-dark"><i class="fa-solid fa-truck-fast"></i> เธฃเธญ COD</span><br><span class="fw-bold text-info">เธฟ${Number(s.depositRemaining).toLocaleString()}</span>`;
-              remainCol = `<span class="fw-bold text-danger">เธฟ${Number(s.depositRemaining).toLocaleString()}</span>`;
+              depositCol = `<span class="badge bg-info text-dark"><i class="fa-solid fa-truck-fast"></i> รอ COD</span><br><span class="fw-bold text-info">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
               actionBtns = `
-                <button class="btn btn-sm btn-success fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'COMPLETED')"><i class="fa-solid fa-check"></i> เธฃเธฑเธเน€เธเธดเธเนเธฅเนเธง</button>
-                <button class="btn btn-sm btn-danger fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'CANCELLED')"><i class="fa-solid fa-rotate-left"></i> เธ•เธตเธเธฅเธฑเธ</button>
+                <button class="btn btn-sm btn-success fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'COMPLETED')"><i class="fa-solid fa-check"></i> รับเงินแล้ว</button>
+                <button class="btn btn-sm btn-danger fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'CANCELLED')"><i class="fa-solid fa-rotate-left"></i> ตีกลับ</button>
               `;
             } else if (s.status === 'COMPLETED') {
-              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> COD เธชเธณเน€เธฃเนเธ</span>`;
-              remainCol = `<span class="text-success">เธฟ0</span>`;
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> COD สำเร็จ</span>`;
+              remainCol = `<span class="text-success">฿0</span>`;
             }
           } else {
             // DEPOSIT OR CASH
             let isDepositSale = s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0;
             if (isDepositSale) {
               trClass = 'table-warning';
-              depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> เธกเธฑเธ”เธเธณ</span><br><span class="fw-bold text-warning">เธฟ${Number(s.depositAmount).toLocaleString()}</span>`;
-              remainCol = `<span class="fw-bold text-danger">เธฟ${Number(s.depositRemaining).toLocaleString()}</span>`;
-              actionBtns = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> เธเธณเธฃเธฐเน€เธเธดเนเธก</button>`;
+              depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${Number(s.depositAmount).toLocaleString()}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              actionBtns = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> ชำระเพิ่ม</button>`;
             } else if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining === 0) {
-              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> เธเธณเธฃเธฐเธเธฃเธ</span>`;
-              remainCol = `<span class="text-success">เธฟ0</span>`;
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> ชำระครบ</span>`;
+              remainCol = `<span class="text-success">฿0</span>`;
             } else if (s.paymentMethod === 'CASH') {
-              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> เน€เธเธดเธเธชเธ”/เนเธญเธ</span>`;
+              depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> เงินสด/โอน</span>`;
             }
           }
 
@@ -678,31 +678,31 @@
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
               <td>${s.qty}</td>
-              <td class="text-primary fw-bold">เธฟ${Number(s.totalSales).toLocaleString()}</td>
-              <td>${s.shippingCost > 0 ? `<span class="text-danger">-เธฟ${s.shippingCost.toLocaleString()}</span>` : "-"}</td>
+              <td class="text-primary fw-bold">฿${Number(s.totalSales).toLocaleString()}</td>
+              <td>${s.shippingCost > 0 ? `<span class="text-danger">-฿${s.shippingCost.toLocaleString()}</span>` : "-"}</td>
               <td>${depositCol}</td>
               <td>${remainCol}</td>
               <td class="text-start">${s.cusName}</td>
               <td>
                  <div class="btn-group">
-                   <button class="btn btn-sm btn-info text-white fw-bold shadow-sm" onclick='pullToInvoice(${saleStr})'><i class="fa-solid fa-file-invoice"></i> เธญเธญเธเธเธดเธฅเธ เธฒเธฉเธต</button>
-                   <button class="btn btn-sm btn-secondary fw-bold shadow-sm" onclick='pullToParcel(${saleStr})'><i class="fa-solid fa-box"></i> เนเธเธเธฐเธซเธเนเธฒ</button>
+                   <button class="btn btn-sm btn-info text-white fw-bold shadow-sm" onclick='pullToInvoice(${saleStr})'><i class="fa-solid fa-file-invoice"></i> ออกบิลภาษี</button>
+                   <button class="btn btn-sm btn-secondary fw-bold shadow-sm" onclick='pullToParcel(${saleStr})'><i class="fa-solid fa-box"></i> ใบปะหน้า</button>
                  </div>
                  ${actionBtns}
                  <div class="btn-group mt-1">
-                   <button class="btn btn-sm btn-outline-warning" onclick='editSaleModal(${saleStr})' title="เนเธเนเนเธเธเนเธญเธกเธนเธฅ"><i class="fa-solid fa-pen"></i> เนเธเนเนเธ</button>
-                   <button class="btn btn-sm btn-outline-danger" onclick="deleteSale('${s.receiptId}','${s.productId}',${s.qty})" title="เธฅเธเธฃเธฒเธขเธเธฒเธฃเธเธตเน"><i class="fa-solid fa-trash"></i> เธฅเธ</button>
+                   <button class="btn btn-sm btn-outline-warning" onclick='editSaleModal(${saleStr})' title="แก้ไขข้อมูล"><i class="fa-solid fa-pen"></i> แก้ไข</button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteSale('${s.receiptId}','${s.productId}',${s.qty})" title="ลบรายการนี้"><i class="fa-solid fa-trash"></i> ลบ</button>
                  </div>
               </td>
            </tr>`;
         }
       });
 
-      document.getElementById('repQty').innerText = totalQty + " เน€เธเธฃเธทเนเธญเธ";
-      document.getElementById('repCost').innerText = "เธฟ" + totalCost.toLocaleString();
-      document.getElementById('repSubTotal').innerText = "เธฟ" + totalSub.toLocaleString();
-      document.getElementById('repProfit').innerText = "เธฟ" + totalProfit.toLocaleString();
-      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="10" class="text-muted">เนเธกเนเธกเธตเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธเธฒเธขเนเธเน€เธ”เธทเธญเธเธเธตเน</td></tr>';
+      document.getElementById('repQty').innerText = totalQty + " เครื่อง";
+      document.getElementById('repCost').innerText = "฿" + totalCost.toLocaleString();
+      document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
+      document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
+      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="10" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
       updateSelectedCount();
     }
 
@@ -715,23 +715,23 @@
     function updateSelectedCount() {
       let count = document.querySelectorAll('.sale-checkbox:checked').length;
       let el = document.getElementById('selectedCount');
-      el.innerText = count > 0 ? `เน€เธฅเธทเธญเธเนเธฅเนเธง ${count} เธฃเธฒเธขเธเธฒเธฃ` : '';
+      el.innerText = count > 0 ? `เลือกแล้ว ${count} รายการ` : '';
     }
 
     async function deleteSelectedSales() {
       let checkboxes = document.querySelectorAll('.sale-checkbox:checked');
       if (checkboxes.length === 0) {
-        Swal.fire('เน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃเธฅเธเธเนเธญเธ', 'warning');
+        Swal.fire('เตือน', 'กรุณาเลือกรายการที่ต้องการลบก่อน', 'warning');
         return;
       }
       const { isConfirmed } = await Swal.fire({
-        title: `เธฅเธ ${checkboxes.length} เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเน€เธฅเธทเธญเธ?`,
-        html: '<div class="text-danger">เธฃเธฐเธเธเธเธฐเธเธทเธเธชเธ•เนเธญเธเธเธฅเธฑเธเน€เธเนเธฒเธเธฅเธฑเธเนเธ”เธขเธญเธฑเธ•เนเธเธกเธฑเธ•เธด</div>',
+        title: `ลบ ${checkboxes.length} รายการที่เลือก?`,
+        html: '<div class="text-danger">ระบบจะคืนสต็อกกลับเข้าคลังโดยอัตโนมัติ</div>',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
-        confirmButtonText: 'เนเธเน, เธฅเธเธ—เธฑเนเธเธซเธกเธ”',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ'
+        confirmButtonText: 'ใช่, ลบทั้งหมด',
+        cancelButtonText: 'ยกเลิก'
       });
       if (!isConfirmed) return;
       Swal.showLoading();
@@ -740,7 +740,7 @@
           let receiptId = cb.dataset.id;
           let productId = cb.dataset.pid;
           let qty = Number(cb.dataset.qty);
-          // เธเธทเธเธชเธ•เนเธญเธ
+          // คืนสต็อก
           const product = globalProducts.find(p => p.id === productId);
           if (product) {
             const { error: stockErr } = await supabaseClient.from('products')
@@ -749,34 +749,34 @@
             if (stockErr) throw stockErr;
             product.stock += qty; // update local cache for next iteration
           }
-          // เธฅเธเธฃเธฒเธขเธเธฒเธฃเธเธฒเธข
+          // ลบรายการขาย
           const { error: saleErr } = await supabaseClient.from('sales')
             .delete()
             .eq('invoice_id', receiptId);
           if (saleErr) throw saleErr;
         }
-        Swal.fire('เธฅเธเน€เธฃเธตเธขเธเธฃเนเธญเธข!', `เธฅเธ ${checkboxes.length} เธฃเธฒเธขเธเธฒเธฃเนเธฅเธฐเธเธทเธเธชเธ•เนเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธข`, 'success');
+        Swal.fire('ลบเรียบร้อย!', `ลบ ${checkboxes.length} รายการและคืนสต็อกเรียบร้อย`, 'success');
         refreshAllData();
       } catch (err) {
         console.error(err);
-        Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธฅเธเธฃเธฒเธขเธเธฒเธฃเนเธ”เน', 'error');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
       }
     }
 
     async function deleteSale(receiptId, productId, qty) {
       const { isConfirmed } = await Swal.fire({
-        title: 'เธฅเธเธฃเธฒเธขเธเธฒเธฃเธเธฒเธขเธเธตเน?',
-        html: `<div class="text-danger fw-bold">เน€เธฅเธเธเธดเธฅ: ${receiptId}</div><div class="text-muted small mt-1">เธฃเธฐเธเธเธเธฐเธเธทเธเธชเธ•เนเธญเธเธเธฅเธฑเธเน€เธเนเธฒเธเธฅเธฑเธเนเธ”เธขเธญเธฑเธ•เนเธเธกเธฑเธ•เธด</div>`,
+        title: 'ลบรายการขายนี้?',
+        html: `<div class="text-danger fw-bold">เลขบิล: ${receiptId}</div><div class="text-muted small mt-1">ระบบจะคืนสต็อกกลับเข้าคลังโดยอัตโนมัติ</div>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
-        confirmButtonText: 'เนเธเน, เธฅเธเน€เธฅเธข',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ'
+        confirmButtonText: 'ใช่, ลบเลย',
+        cancelButtonText: 'ยกเลิก'
       });
       if (!isConfirmed) return;
       Swal.showLoading();
       try {
-        // เธเธทเธเธชเธ•เนเธญเธ
+        // คืนสต็อก
         const product = globalProducts.find(p => p.id === productId);
         if (product) {
           const { error: stockErr } = await supabaseClient.from('products')
@@ -784,36 +784,36 @@
             .eq('id', productId);
           if (stockErr) throw stockErr;
         }
-        // เธฅเธเธฃเธฒเธขเธเธฒเธฃเธเธฒเธข
+        // ลบรายการขาย
         const { error: saleErr } = await supabaseClient.from('sales')
           .delete()
           .eq('invoice_id', receiptId);
         if (saleErr) throw saleErr;
-        Swal.fire('เธฅเธเน€เธฃเธตเธขเธเธฃเนเธญเธข!', 'เธฅเธเธฃเธฒเธขเธเธฒเธฃเนเธฅเธฐเธเธทเธเธชเธ•เนเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+        Swal.fire('ลบเรียบร้อย!', 'ลบรายการและคืนสต็อกเรียบร้อย', 'success');
         refreshAllData();
       } catch (err) {
         console.error(err);
-        Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธฅเธเธฃเธฒเธขเธเธฒเธฃเนเธ”เน', 'error');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบรายการได้', 'error');
       }
     }
 
     async function editSaleModal(s) {
       const { value: formValues } = await Swal.fire({
-        title: `เนเธเนเนเธเธฃเธฒเธขเธเธฒเธฃเธเธฒเธข`,
+        title: `แก้ไขรายการขาย`,
         html: `
           <div class="text-start">
-            <label class="small fw-bold mb-1">เธเธทเนเธญเธฅเธนเธเธเนเธฒ</label>
-            <input id="edit_cusName" class="swal2-input" value="${s.cusName || ''}" placeholder="เธเธทเนเธญเธฅเธนเธเธเนเธฒ">
-            <label class="small fw-bold mb-1">เธ—เธตเนเธญเธขเธนเน/เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน</label>
-            <input id="edit_address" class="swal2-input" value="${s.address || ''}" placeholder="เธ—เธตเนเธญเธขเธนเน/เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน">
-            <label class="small fw-bold mb-1">เธฃเธฒเธเธฒเธเธฒเธขเธเธฃเธดเธ (เธขเธญเธ”เธฃเธงเธกเธ—เธฑเนเธเธชเธดเนเธ)</label>
-            <input id="edit_grandTotal" class="swal2-input" type="number" value="${Number(s.totalSales)}" placeholder="เธขเธญเธ”เธฃเธงเธก">
-            <label class="small fw-bold mb-1">เธเนเธฒเธเธเธชเนเธ (เธเธฒเธ—)</label>
-            <input id="edit_shippingCost" class="swal2-input" type="number" value="${Number(s.shippingCost || 0)}" placeholder="เธเนเธฒเธเธเธชเนเธ" min="0">
+            <label class="small fw-bold mb-1">ชื่อลูกค้า</label>
+            <input id="edit_cusName" class="swal2-input" value="${s.cusName || ''}" placeholder="ชื่อลูกค้า">
+            <label class="small fw-bold mb-1">ที่อยู่/เบอร์โทรศัพท์</label>
+            <input id="edit_address" class="swal2-input" value="${s.address || ''}" placeholder="ที่อยู่/เบอร์โทรศัพท์">
+            <label class="small fw-bold mb-1">ราคาขายจริง (ยอดรวมทั้งสิ้น)</label>
+            <input id="edit_grandTotal" class="swal2-input" type="number" value="${Number(s.totalSales)}" placeholder="ยอดรวม">
+            <label class="small fw-bold mb-1">ค่าขนส่ง (บาท)</label>
+            <input id="edit_shippingCost" class="swal2-input" type="number" value="${Number(s.shippingCost || 0)}" placeholder="ค่าขนส่ง" min="0">
           </div>`,
         showCancelButton: true,
-        confirmButtonText: 'เธเธฑเธเธ—เธถเธเธเธฒเธฃเนเธเนเนเธ',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ',
+        confirmButtonText: 'บันทึกการแก้ไข',
+        cancelButtonText: 'ยกเลิก',
         preConfirm: () => ({
           cusName: document.getElementById('edit_cusName').value,
           address: document.getElementById('edit_address').value,
@@ -824,7 +824,7 @@
       if (!formValues) return;
       Swal.showLoading();
       try {
-        // เธเธณเธเธงเธ“เธเธณเนเธฃเนเธซเธกเน: เธเธณเนเธฃ = เธขเธญเธ”เธเธฒเธขเธเนเธญเธ VAT - เธ•เนเธเธ—เธธเธ - เธเนเธฒเธเธเธชเนเธ
+        // คำนวณกำไรใหม่: กำไร = ยอดขายก่อน VAT - ต้นทุน - ค่าขนส่ง
         let newProfit = Number(s.subTotal) - Number(s.totalCost) - formValues.shippingCost;
         const { error } = await supabaseClient.from('sales')
           .update({ 
@@ -836,24 +836,24 @@
           })
           .eq('invoice_id', s.receiptId);
         if (error) throw error;
-        Swal.fire('เธชเธณเน€เธฃเนเธ!', 'เธญเธฑเธเน€เธ”เธ•เน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+        Swal.fire('สำเร็จ!', 'อัปเดตเรียบร้อย', 'success');
         refreshAllData();
       } catch (err) {
         console.error(err);
-        Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธเนเนเธเนเธ”เน', 'error');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถแก้ไขได้', 'error');
       }
     }
 
     async function updateOrderStatus(receiptId, productId, qty, newStatus) {
-      let actionText = newStatus === 'COMPLETED' ? 'เธขเธทเธเธขเธฑเธเธฃเธฑเธเน€เธเธดเธ COD เน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธงเนเธเนเธซเธฃเธทเธญเนเธกเน?' : 'เธขเธทเธเธขเธฑเธเธ•เธตเธเธฅเธฑเธ/เธขเธเน€เธฅเธดเธ เธญเธญเน€เธ”เธญเธฃเนเธเธตเน เนเธฅเธฐเธเธทเธเธชเธ•เนเธญเธเนเธเนเธซเธฃเธทเธญเนเธกเน?';
+      let actionText = newStatus === 'COMPLETED' ? 'ยืนยันรับเงิน COD เรียบร้อยแล้วใช่หรือไม่?' : 'ยืนยันตีกลับ/ยกเลิก ออเดอร์นี้ และคืนสต็อกใช่หรือไม่?';
       
       const { isConfirmed } = await Swal.fire({
-        title: 'เธขเธทเธเธขเธฑเธเธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐ?',
+        title: 'ยืนยันอัปเดตสถานะ?',
         text: actionText,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'เนเธเน, เธญเธฑเธเน€เธ”เธ•',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ'
+        confirmButtonText: 'ใช่, อัปเดต',
+        cancelButtonText: 'ยกเลิก'
       });
 
       if (!isConfirmed) return;
@@ -861,7 +861,7 @@
       Swal.showLoading();
       try {
         if (newStatus === 'CANCELLED') {
-          // เธ”เธถเธเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒเน€เธ”เธดเธกเธกเธฒเน€เธเธดเนเธกเธชเธ•เนเธญเธ
+          // ดึงข้อมูลสินค้าเดิมมาเพิ่มสต็อก
           const product = globalProducts.find(p => p.id === productId);
           if (product) {
             const { error: stockErr } = await supabaseClient.from('products')
@@ -871,15 +871,15 @@
           }
         }
 
-        // เธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐเธญเธญเน€เธ”เธญเธฃเน
+        // อัปเดตสถานะออเดอร์
         let updateData = { status: newStatus };
         if (newStatus === 'COMPLETED') {
-          // เธ–เนเธฒ COD เธชเธณเน€เธฃเนเธ เธเธฐเธ–เธทเธญเธงเนเธฒเธเนเธฒเธขเธเธฃเธ (deposit_remaining = 0, deposit_amount = grand_total)
+          // ถ้า COD สำเร็จ จะถือว่าจ่ายครบ (deposit_remaining = 0, deposit_amount = grand_total)
           const sale = globalSales.find(s => s.receiptId === receiptId);
           if (sale) {
             updateData.deposit_amount = sale.totalSales;
             updateData.deposit_remaining = 0;
-            // เธเธฑเธเธ—เธถเธเธงเธฑเธเธ—เธตเนเธเธณเธฃเธฐเธเธฃเธ เน€เธเธทเนเธญเธเธฑเธเธขเธญเธ”เธเธฒเธขเธ•เธฒเธกเน€เธ”เธทเธญเธเธ—เธตเนเธฃเธฑเธเน€เธเธดเธเธเธฃเธดเธ
+            // บันทึกวันที่ชำระครบ เพื่อนับยอดขายตามเดือนที่รับเงินจริง
             updateData.completed_date = new Date().toISOString().split('T')[0];
           }
         }
@@ -890,47 +890,47 @@
 
         if (saleErr) throw saleErr;
 
-        Swal.fire('เธชเธณเน€เธฃเนเธ!', 'เธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐเน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+        Swal.fire('สำเร็จ!', 'อัปเดตสถานะเรียบร้อย', 'success');
         refreshAllData();
       } catch (error) {
         console.error(error);
-        Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐเนเธ”เน', 'error');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถอัปเดตสถานะได้', 'error');
       }
     }
 
     async function payMoreDeposit(receiptId, currentDeposit, currentRemaining, grandTotal) {
       const { value: payAmount } = await Swal.fire({
-        title: 'เธเธณเธฃเธฐเน€เธเธดเธเน€เธเธดเนเธก',
+        title: 'ชำระเงินเพิ่ม',
         html: `<div class="text-start">
-          <p><strong>เน€เธฅเธเธเธดเธฅ:</strong> ${receiptId}</p>
-          <p><strong>เธขเธญเธ”เธฃเธงเธกเธ—เธฑเนเธเธซเธกเธ”:</strong> <span class="text-primary">เธฟ${grandTotal.toLocaleString()}</span></p>
-          <p><strong>เธเธณเธฃเธฐเนเธฅเนเธง (เธกเธฑเธ”เธเธณ):</strong> <span class="text-warning">เธฟ${currentDeposit.toLocaleString()}</span></p>
-          <p><strong>เธขเธญเธ”เธเนเธฒเธเธเธณเธฃเธฐ:</strong> <span class="text-danger fw-bold">เธฟ${currentRemaining.toLocaleString()}</span></p>
+          <p><strong>เลขบิล:</strong> ${receiptId}</p>
+          <p><strong>ยอดรวมทั้งหมด:</strong> <span class="text-primary">฿${grandTotal.toLocaleString()}</span></p>
+          <p><strong>ชำระแล้ว (มัดจำ):</strong> <span class="text-warning">฿${currentDeposit.toLocaleString()}</span></p>
+          <p><strong>ยอดค้างชำระ:</strong> <span class="text-danger fw-bold">฿${currentRemaining.toLocaleString()}</span></p>
           <hr>
-          <label class="fw-bold">เธเธณเธเธงเธเน€เธเธดเธเธ—เธตเนเธเธณเธฃเธฐเน€เธเธดเนเธก (เธเธฒเธ—):</label>
+          <label class="fw-bold">จำนวนเงินที่ชำระเพิ่ม (บาท):</label>
         </div>`,
         input: 'number',
         inputAttributes: { min: 1, max: currentRemaining, step: '0.01' },
         inputValue: currentRemaining,
         showCancelButton: true,
-        confirmButtonText: '<i class="fa-solid fa-check"></i> เธขเธทเธเธขเธฑเธเธเธณเธฃเธฐ',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ',
+        confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยันชำระ',
+        cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#f97316',
         inputValidator: (value) => {
-          if (!value || Number(value) <= 0) return 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธณเธเธงเธเน€เธเธดเธเธ—เธตเนเธเธณเธฃเธฐ';
-          if (Number(value) > currentRemaining) return `เธเธณเธเธงเธเน€เธเธดเธเธ•เนเธญเธเนเธกเนเน€เธเธดเธเธขเธญเธ”เธเนเธฒเธ เธฟ${currentRemaining.toLocaleString()}`;
+          if (!value || Number(value) <= 0) return 'กรุณากรอกจำนวนเงินที่ชำระ';
+          if (Number(value) > currentRemaining) return `จำนวนเงินต้องไม่เกินยอดค้าง ฿${currentRemaining.toLocaleString()}`;
         }
       });
 
       if (payAmount) {
         let newDeposit = currentDeposit + Number(payAmount);
         let newRemaining = currentRemaining - Number(payAmount);
-        if (newRemaining < 0.01) newRemaining = 0; // เธเธฑเธ”เน€เธจเธฉ
+        if (newRemaining < 0.01) newRemaining = 0; // ปัดเศษ
 
         Swal.showLoading();
         try {
           let updateData = { deposit_amount: newDeposit, deposit_remaining: newRemaining };
-          // เธ–เนเธฒเธเธณเธฃเธฐเธเธฃเธ โ’ เธเธฑเธเธ—เธถเธ completed_date เน€เธเนเธเธงเธฑเธเธ—เธตเนเธเธฑเธเธเธธเธเธฑเธ (เน€เธ”เธทเธญเธเธ—เธตเนเธฃเธฑเธเน€เธเธดเธ)
+          // ถ้าชำระครบ → บันทึก completed_date เป็นวันที่ปัจจุบัน (เดือนที่รับเงิน)
           if (newRemaining === 0) {
             updateData.completed_date = new Date().toISOString().split('T')[0];
           }
@@ -939,12 +939,12 @@
             .eq('invoice_id', receiptId);
           if (error) throw error;
 
-          let statusMsg = newRemaining === 0 ? 'เธเธณเธฃเธฐเธเธฃเธเน€เธ•เนเธกเธเธณเธเธงเธเนเธฅเนเธง! เธขเธญเธ”เธเธฒเธขเธเธฐเธเธฑเธเน€เธเนเธเธเธญเธเน€เธ”เธทเธญเธเธเธตเน' : `เธเธณเธฃเธฐเน€เธเธดเนเธก เธฟ${Number(payAmount).toLocaleString()} เธชเธณเน€เธฃเนเธ\nเธขเธญเธ”เธเธเน€เธซเธฅเธทเธญ: เธฟ${newRemaining.toLocaleString()}`;
-          Swal.fire('เธชเธณเน€เธฃเนเธ!', statusMsg, 'success');
+          let statusMsg = newRemaining === 0 ? 'ชำระครบเต็มจำนวนแล้ว! ยอดขายจะนับเป็นของเดือนนี้' : `ชำระเพิ่ม ฿${Number(payAmount).toLocaleString()} สำเร็จ\nยอดคงเหลือ: ฿${newRemaining.toLocaleString()}`;
+          Swal.fire('สำเร็จ!', statusMsg, 'success');
           refreshAllData();
         } catch (error) {
           console.error(error);
-          Swal.fire('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธณเธฃเธฐเน€เธเธดเธเนเธ”เน', 'error');
+          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการชำระเงินได้', 'error');
         }
       }
     }
@@ -961,7 +961,7 @@
          <td><input type="text" class="form-control form-control-sm text-start row-desc" value="${sale.productName}" required></td>
          <td><input type="number" class="form-control form-control-sm text-center row-qty" value="${sale.qty}" min="1" required oninput="calcCustomInvoiceTotal()"></td>
          <td><input type="number" class="form-control form-control-sm text-end row-price" value="${sale.subTotal / sale.qty}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
-         <td class="fw-bold row-total">เธฟ${Number(sale.subTotal).toLocaleString()}</td>
+         <td class="fw-bold row-total">฿${Number(sale.subTotal).toLocaleString()}</td>
          <td><button class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
       </tr>`;
       calcCustomInvoiceTotal();
@@ -975,7 +975,7 @@
       document.getElementById('pcProductName').value = sale.productName || '';
       document.getElementById('pcQty').value = sale.qty || 1;
 
-      // เธ–เนเธฒเน€เธเนเธ COD เธ”เธถเธเธขเธญเธ”เธกเธฒเนเธชเน
+      // ถ้าเป็น COD ดึงยอดมาใส่
       if (sale.paymentMethod === 'COD' || sale.status === 'PENDING_COD') {
         document.getElementById('pcCodAmount').value = Number(sale.totalSales || 0).toLocaleString();
       } else {
@@ -984,7 +984,7 @@
 
       const triggerTab = document.querySelector('#reportTabs button[data-bs-target="#tab-parcel"]');
       if (triggerTab) triggerTab.click();
-      Swal.fire('เธ”เธถเธเธเนเธญเธกเธนเธฅเธชเธณเน€เธฃเนเธ', 'เธ”เธถเธเธเนเธญเธกเธนเธฅเธฅเธนเธเธเนเธฒเนเธฅเธฐเธชเธดเธเธเนเธฒเน€เธเนเธฒเนเธเธขเธฑเธเนเธ—เนเธเนเธเธเธฐเธซเธเนเธฒเธเธฑเธชเธ”เธธเน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+      Swal.fire('ดึงข้อมูลสำเร็จ', 'ดึงข้อมูลลูกค้าและสินค้าเข้าไปยังแท็บใบปะหน้าพัสดุเรียบร้อย', 'success');
     }
 
     function generateParcelLabel() {
@@ -1014,10 +1014,10 @@
       if (document.getElementById('qtTableBody').children.length === 0) addInvoiceRow();
       // Populate product selector
       let selectEl = document.getElementById('qtProductSelect');
-      let optHtml = '<option value="">-- เน€เธฅเธทเธญเธเธชเธดเธเธเนเธฒเธ—เธตเนเธกเธต stock --</option>';
+      let optHtml = '<option value="">-- เลือกสินค้าที่มี stock --</option>';
       globalProducts.forEach(p => {
         if (p.stock > 0) {
-          optHtml += `<option value="${p.id}" data-name="${p.name}" data-price="${p.actualPrice}" data-brand="${p.brand}" data-stock="${p.stock}">${p.name} (เธขเธตเนเธซเนเธญ: ${p.brand} | เธฃเธฒเธเธฒ: เธฟ${p.actualPrice.toLocaleString()} | เธเธเน€เธซเธฅเธทเธญ: ${p.stock})</option>`;
+          optHtml += `<option value="${p.id}" data-name="${p.name}" data-price="${p.actualPrice}" data-brand="${p.brand}" data-stock="${p.stock}">${p.name} (ยี่ห้อ: ${p.brand} | ราคา: ฿${p.actualPrice.toLocaleString()} | คงเหลือ: ${p.stock})</option>`;
         }
       });
       selectEl.innerHTML = optHtml;
@@ -1050,7 +1050,7 @@
         emptyRow.querySelector('.row-desc').value = productName;
         emptyRow.querySelector('.row-qty').value = 1;
         emptyRow.querySelector('.row-price').value = productPrice;
-        emptyRow.querySelector('.row-total').innerText = "เธฟ" + productPrice.toLocaleString();
+        emptyRow.querySelector('.row-total').innerText = "฿" + productPrice.toLocaleString();
       } else {
         let idx = tbody.children.length + 1;
         let tr = document.createElement('tr');
@@ -1059,7 +1059,7 @@
            <td><input type="text" class="form-control form-control-sm text-start row-desc" value="${productName}" required></td>
            <td><input type="number" class="form-control form-control-sm text-center row-qty" value="1" min="1" required oninput="calcCustomInvoiceTotal()"></td>
            <td><input type="number" class="form-control form-control-sm text-end row-price" value="${productPrice}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
-           <td class="fw-bold row-total">เธฟ${productPrice.toLocaleString()}</td>
+           <td class="fw-bold row-total">฿${productPrice.toLocaleString()}</td>
            <td><button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
@@ -1075,10 +1075,10 @@
       let tr = document.createElement('tr');
       tr.innerHTML = `
          <td>${idx}</td>
-         <td><input type="text" class="form-control form-control-sm text-start row-desc" placeholder="เธฃเธฐเธเธธเธฃเธฒเธขเธเธฒเธฃเธชเธดเธเธเนเธฒ" required></td>
+         <td><input type="text" class="form-control form-control-sm text-start row-desc" placeholder="ระบุรายการสินค้า" required></td>
          <td><input type="number" class="form-control form-control-sm text-center row-qty" value="1" min="1" required oninput="calcCustomInvoiceTotal()"></td>
          <td><input type="number" class="form-control form-control-sm text-end row-price" value="0" min="0" required oninput="calcCustomInvoiceTotal()"></td>
-         <td class="fw-bold row-total">เธฟ0.00</td>
+         <td class="fw-bold row-total">฿0.00</td>
          <td><button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
       `;
       tbody.appendChild(tr);
@@ -1094,17 +1094,17 @@
         let prc = Number(row.querySelector('.row-price').value) || 0;
         let amt = qty * prc;
         totalSub += amt;
-        row.querySelector('.row-total').innerText = "เธฟ" + amt.toLocaleString();
+        row.querySelector('.row-total').innerText = "฿" + amt.toLocaleString();
       });
     }
 
     function printCustomInvoice() {
       document.getElementById('invTitleDisplay').innerText = document.getElementById('qtDocType').value;
-      document.getElementById('invDocId').innerText = document.getElementById('qtDocId').value || 'CUSTOM-เธเธดเธฅ';
+      document.getElementById('invDocId').innerText = document.getElementById('qtDocId').value || 'CUSTOM-บิล';
       let dParts = document.getElementById('qtDate').value.split('-');
       document.getElementById('invDate').innerText = dParts.length === 3 ? `${dParts[2]}/${dParts[1]}/${dParts[0]}` : '-';
       document.getElementById('invTerm').innerText = document.getElementById('qtPaymentTerm').value;
-      document.getElementById('invCusName').innerText = document.getElementById('qtCusName').value || 'เธฅเธนเธเธเนเธฒเธ—เธฑเนเธงเนเธ';
+      document.getElementById('invCusName').innerText = document.getElementById('qtCusName').value || 'ลูกค้าทั่วไป';
       document.getElementById('invCusAddress').innerText = document.getElementById('qtCusAddress').value || '-';
 
       let rows = document.querySelectorAll('#qtTableBody tr');
@@ -1115,7 +1115,7 @@
         let prc = Number(row.querySelector('.row-price').value) || 0;
         let amt = qty * prc;
         subTotal += amt;
-        html += `<tr><td>${i + 1}</td><td class="text-start">${desc}</td><td>${qty}</td><td>เธฟ${prc.toLocaleString()}</td><td>เธฟ${amt.toLocaleString()}</td></tr>`;
+        html += `<tr><td>${i + 1}</td><td class="text-start">${desc}</td><td>${qty}</td><td>฿${prc.toLocaleString()}</td><td>฿${amt.toLocaleString()}</td></tr>`;
       });
 
       let docType = document.getElementById('qtDocType').value;
@@ -1124,9 +1124,9 @@
       let grandTotal = subTotal + vat;
 
       document.getElementById('invItemsBody').innerHTML = html;
-      document.getElementById('invSubTotal').innerText = "เธฟ" + subTotal.toLocaleString();
-      document.getElementById('invVat').innerText = isNoVat ? "-" : "เธฟ" + vat.toLocaleString();
-      document.getElementById('invGrandTotal').innerText = "เธฟ" + grandTotal.toLocaleString();
+      document.getElementById('invSubTotal').innerText = "฿" + subTotal.toLocaleString();
+      document.getElementById('invVat').innerText = isNoVat ? "-" : "฿" + vat.toLocaleString();
+      document.getElementById('invGrandTotal').innerText = "฿" + grandTotal.toLocaleString();
 
       document.getElementById('printInvoiceSection').classList.remove('d-none');
       window.print();
@@ -1156,10 +1156,10 @@
           combined.push({
             id: s.receiptId,
             date: s.date || "01/01/2000",
-            type: 'เธฃเธฒเธขเธฃเธฑเธ',
-            category: 'เธเธฒเธขเธชเธดเธเธเนเธฒ: ' + s.productName,
+            type: 'รายรับ',
+            category: 'ขายสินค้า: ' + s.productName,
             amount: s.totalSales,
-            note: 'เธฅเธนเธเธเนเธฒ: ' + s.cusName + ' (เธเธณเธเธงเธ ' + s.qty + ' เน€เธเธฃเธทเนเธญเธ)',
+            note: 'ลูกค้า: ' + s.cusName + ' (จำนวน ' + s.qty + ' เครื่อง)',
             source: 'sale'
           });
         }
@@ -1180,10 +1180,10 @@
             combined.push({
               id: impId,
               date: formatDateToTH(d),
-              type: 'เธฃเธฒเธขเธเนเธฒเธข',
-              category: 'เธเธทเนเธญเธชเธดเธเธเนเธฒเน€เธเนเธฒ: ' + p.name,
+              type: 'รายจ่าย',
+              category: 'ซื้อสินค้าเข้า: ' + p.name,
               amount: Number(p.cost) * totalImported,
-              note: 'เธเธณเธเธงเธเธเธฑเธ”เธเธทเนเธญเธฃเธงเธก ' + totalImported + ' เน€เธเธฃเธทเนเธญเธ (เธญเนเธฒเธเธญเธดเธเธเธฒเธเธเธฅเธฑเธเนเธฅเธฐเธขเธญเธ”เธเธฒเธข)',
+              note: 'จำนวนจัดซื้อรวม ' + totalImported + ' เครื่อง (อ้างอิงจากคลังและยอดขาย)',
               source: 'import'
             });
           }
@@ -1199,7 +1199,7 @@
 
       let html = '';
       let allTx = getAllTransactions();
-      // เน€เธฃเธตเธขเธเธเธฒเธเนเธซเธกเนเนเธเน€เธเนเธฒ
+      // เรียงจากใหม่ไปเก่า
       let sortedTx = allTx.sort((a, b) => {
         let dateA = a.date.split('/').reverse().join('');
         let dateB = b.date.split('/').reverse().join('');
@@ -1212,8 +1212,8 @@
         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
         if (tMonth === targetMonth) {
           let actionButtons = `
-            <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="เนเธเนเนเธเธฃเธฒเธขเธเธฒเธฃ"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="เธฅเธเธฃเธฒเธขเธเธฒเธฃ"><i class="fa-solid fa-trash"></i></button>
+            <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
           `;
           if (t.source !== 'manual') {
             actionButtons += ` <span class="badge bg-secondary small ms-1">Auto</span>`;
@@ -1222,22 +1222,22 @@
           html += `<tr>
                  <td><span class="badge bg-dark" style="font-size:0.75rem;">${t.id}</span></td>
                  <td>${t.date}</td>
-                 <td><span class="badge ${t.type === 'เธฃเธฒเธขเธฃเธฑเธ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
+                 <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
                  <td class="text-start fw-medium">${t.category}</td>
-                 <td class="fw-bold">เธฟ${Number(t.amount).toLocaleString()}</td>
+                 <td class="fw-bold">฿${Number(t.amount).toLocaleString()}</td>
                  <td class="text-start text-muted" style="font-size:0.85rem;">${t.note || '-'}</td>
                  <td>${actionButtons}</td>
               </tr>`;
         }
       });
-      document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">เนเธกเนเธกเธตเธเธฃเธฐเธงเธฑเธ•เธดเธฃเธฒเธขเธฃเธฑเธ-เธฃเธฒเธขเธเนเธฒเธขเนเธเน€เธ”เธทเธญเธเธเธตเนเธ—เธตเนเน€เธฅเธทเธญเธ</td></tr>';
+      document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
     }
 
     function printTxReport() {
       let filter = document.getElementById('monthFilter').value;
-      let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "เธ—เธฑเนเธเธซเธกเธ”";
+      let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
 
-      document.getElementById('txPrintMonth').innerText = "เธเธฃเธฐเธเธณเน€เธ”เธทเธญเธ: " + targetMonth;
+      document.getElementById('txPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
 
       let html = '';
       let totalIncome = 0;
@@ -1245,7 +1245,7 @@
       let count = 1;
 
       let allTx = getAllTransactions();
-      // เธเธดเธกเธเนเน€เธฃเธตเธขเธเธ•เธฒเธกเน€เธงเธฅเธฒเน€เธเนเธฒเนเธเนเธซเธกเน
+      // พิมพ์เรียงตามเวลาเก่าไปใหม่
       let sortedTx = allTx.sort((a, b) => {
         let dateA = a.date.split('/').reverse().join('');
         let dateB = b.date.split('/').reverse().join('');
@@ -1258,8 +1258,8 @@
         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
         if (filter && tMonth !== targetMonth) return;
 
-        let inc = t.type === 'เธฃเธฒเธขเธฃเธฑเธ' ? Number(t.amount) : 0;
-        let exp = t.type === 'เธฃเธฒเธขเธเนเธฒเธข' ? Number(t.amount) : 0;
+        let inc = t.type === 'รายรับ' ? Number(t.amount) : 0;
+        let exp = t.type === 'รายจ่าย' ? Number(t.amount) : 0;
 
         totalIncome += inc;
         totalExpense += exp;
@@ -1273,7 +1273,7 @@
           </tr>`;
       });
 
-      if (html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">เนเธกเนเธกเธตเธเธฃเธฐเธงเธฑเธ•เธดเธเนเธญเธกเธนเธฅเนเธเธเธงเธ”เน€เธ”เธทเธญเธเธ—เธตเนเน€เธฅเธทเธญเธ</td></tr>';
+      if (html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
 
       document.getElementById('txPrintBody').innerHTML = html;
       document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -1320,17 +1320,17 @@
           const { error } = await supabaseClient.from('transactions').insert([txData]);
           if (error) throw error;
         }
-        Swal.fire('เธชเธณเน€เธฃเนเธ', 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเธเธฑเธเธเธตเน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+        Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
         resetTxForm();
         refreshAllData();
       } catch (error) {
         console.error(error);
-        Swal.fire('เธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเนเธ”เน', 'error');
+        Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
     }
 
     function editTransaction(id, date, type, category, amount, note) {
-      document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> เนเธเนเนเธเธเนเธญเธกเธนเธฅเธฃเธฒเธขเธเธฒเธฃเธเธฑเธเธเธต (เธฃเธซเธฑเธช: ${id})`;
+      document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> แก้ไขข้อมูลรายการบัญชี (รหัส: ${id})`;
       document.getElementById('tx_id').value = id;
 
       let parts = date.split('/');
@@ -1342,30 +1342,30 @@
       document.getElementById('tx_note').value = note;
 
       document.getElementById('btnSaveTx').className = "btn btn-warning w-100 fw-bold";
-      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> เธญเธฑเธเน€เธ”เธ•เธฃเธฒเธขเธเธฒเธฃเนเธ–เธงเธเนเธญเธกเธนเธฅ';
+      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการแถวข้อมูล';
       document.getElementById('btnCancelTxEdit').classList.remove('d-none');
       document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetTxForm() {
-      document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เน€เธเธดเนเธกเธฃเธฒเธขเธเธฒเธฃเธเธฑเธเธเธตเธฃเธฒเธขเธฃเธฑเธ/เธฃเธฒเธขเธเนเธฒเธข';
+      document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
       document.getElementById('txForm').reset();
       document.getElementById('tx_id').value = '';
       document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
-      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเธเธฑเธเธเธต';
+      document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
       document.getElementById('btnCancelTxEdit').classList.add('d-none');
     }
 
     function deleteTxConfirm(id) {
       Swal.fire({
-        title: 'เธขเธทเธเธขเธฑเธเธฅเธเธเนเธญเธกเธนเธฅ?',
-        text: "เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเธฃเธฒเธขเธเธฒเธฃเธฃเธฒเธขเธฃเธฑเธ-เธฃเธฒเธขเธเนเธฒเธขเธฃเธซเธฑเธช " + id + " เธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน!",
+        title: 'ยืนยันลบข้อมูล?',
+        text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'เธขเธทเธเธขเธฑเธเธฅเธ',
-        cancelButtonText: 'เธขเธเน€เธฅเธดเธ'
+        confirmButtonText: 'ยืนยันลบ',
+        cancelButtonText: 'ยกเลิก'
       }).then(async (result) => {
         if (result.isConfirmed) {
           Swal.showLoading();
@@ -1373,7 +1373,7 @@
             let isAuto = id.startsWith('INV-') || id.startsWith('IMP-');
             if (isAuto) {
               let exists = globalTransactions.find(t => t.id === id);
-              let txData = { tx_id: id, type: 'เธฃเธฒเธขเธฃเธฑเธ', date: new Date().toISOString().split('T')[0], category: 'เธฅเธเธฃเธฒเธขเธเธฒเธฃ (เธเนเธญเธ)', amount: 0, note: 'DELETED_AUTO' };
+              let txData = { tx_id: id, type: 'รายรับ', date: new Date().toISOString().split('T')[0], category: 'ลบรายการ (ซ่อน)', amount: 0, note: 'DELETED_AUTO' };
               if (exists) {
                 const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
                 if (error) throw error;
@@ -1385,11 +1385,11 @@
               const { error } = await supabaseClient.from('transactions').delete().eq('tx_id', id);
               if (error) throw error;
             }
-            Swal.fire('เธฅเธเธฃเธฒเธขเธเธฒเธฃเธชเธณเน€เธฃเนเธ', '', 'success');
+            Swal.fire('ลบรายการสำเร็จ', '', 'success');
             refreshAllData();
           } catch (error) {
             console.error(error);
-            Swal.fire('เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธฅเธเธเนเธญเธกเธนเธฅเนเธ”เน', 'error');
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
           }
         }
       });
@@ -1418,19 +1418,19 @@
           const { error } = await supabaseClient.from('products').insert([prodData]);
           if (error) throw error;
         }
-        Swal.fire('เธชเธณเน€เธฃเนเธ', 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒเน€เธฃเธตเธขเธเธฃเนเธญเธข', 'success');
+        Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
         resetProductForm();
         refreshAllData();
       } catch (error) {
         console.error(error);
-        Swal.fire('เธฅเนเธกเน€เธซเธฅเธง', 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเนเธ”เน', 'error');
+        Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
     }
 
     function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "") {
-      document.getElementById('productPageTitle').innerText = "เนเธเนเนเธเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒ (เธฃเธซเธฑเธช: " + id + ")";
+      document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
-      // updated_at เน€เธเนเธ timestamp ISO เธเธฒเธ Supabase เน€เธเนเธ 2026-06-25T08:00:00.000Z
+      // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
       if (date && date.includes('T')) {
         document.getElementById('p_date').value = date.split('T')[0];
       } else if (date && date.includes('/')) {
@@ -1446,18 +1446,18 @@
       document.getElementById('p_stock').value = stock;
       document.getElementById('p_fbLink').value = fbLink && fbLink !== 'undefined' ? fbLink : "";
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
-      document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> เธญเธฑเธเน€เธ”เธ•เธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒ';
+      document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
     }
 
     function resetProductForm() {
-      document.getElementById('productPageTitle').innerText = "เธเธฑเธ”เธเธฒเธฃเธเนเธญเธกเธนเธฅเธชเธดเธเธเนเธฒเนเธเธเธฅเธฑเธ / เธเธณเน€เธเนเธฒเธชเธ•เนเธญเธ";
+      document.getElementById('productPageTitle').innerText = "จัดการข้อมูลสินค้าในคลัง / นำเข้าสต็อก";
       document.getElementById('formProduct').reset();
       document.getElementById('p_id').value = '';
       let today = new Date().toISOString().split('T')[0];
       document.getElementById('p_date').value = today;
       document.getElementById('btnSaveProduct').className = "btn btn-custom-orange w-100";
-      document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ';
+      document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
       document.getElementById('btnCancelEdit').classList.add('d-none');
     }
 
@@ -1467,7 +1467,7 @@
       document.getElementById('saleDate').value = today;
       document.getElementById('tx_date').value = today;
 
-      // เน€เธฃเธดเนเธกเธ”เธถเธเธเนเธญเธกเธนเธฅเน€เธกเธทเนเธญเนเธซเธฅเธ”เธซเธเนเธฒเน€เธงเนเธ
+      // เริ่มดึงข้อมูลเมื่อโหลดหน้าเว็บ
       refreshAllData();
     };
   

@@ -311,13 +311,26 @@
         <h6 class="m-0 fw-bold text-dark-blue"><i class="fa-solid fa-bolt text-orange me-2"></i> ข้อมูลเชื่อมต่อกับ
           Supabase Database</h6>
       </div>
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
         <label class="small fw-bold text-muted mb-0"><i class="fa-regular fa-calendar-check text-orange"></i>
           เลือกเดือน:</label>
         <input type="month" id="monthFilter"
-          class="form-control form-control-sm border-orange text-dark-blue fw-bold shadow-sm"
+          class="form-control form-control-sm border-orange text-dark-blue fw-bold shadow-sm" style="max-width:160px;"
           onchange="refreshAllData()">
-        <button class="btn btn-sm btn-outline-danger ms-3" onclick="logout()">
+        <span class="text-muted small mx-1">|</span>
+        <label class="small fw-bold text-muted mb-0"><i class="fa-solid fa-magnifying-glass text-info"></i>
+          ค้นหาวันที่:</label>
+        <input type="date" id="dateSearchFrom"
+          class="form-control form-control-sm border-info text-dark-blue fw-bold shadow-sm" style="max-width:145px;"
+          title="วันที่เริ่มต้น (ว/ด/ป)" onchange="applyDateSearch()">
+        <span class="small text-muted">ถึง</span>
+        <input type="date" id="dateSearchTo"
+          class="form-control form-control-sm border-info text-dark-blue fw-bold shadow-sm" style="max-width:145px;"
+          title="วันที่สิ้นสุด (ว/ด/ป)" onchange="applyDateSearch()">
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearDateSearch()" title="ล้างการค้นหาวันที่">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger ms-2" onclick="logout()">
           <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
         </button>
       </div>
@@ -410,7 +423,7 @@
           <div class="col-lg-6">
             <div class="card p-3 h-100 shadow-sm">
               <h6 class="fw-bold text-dark-blue mb-3"><i class="fa-solid fa-chart-line text-success"></i>
-                กราฟยอดขายรายปี</h6>
+                กราฟยอดขายราย 15 วัน</h6>
               <div style="height: 250px;">
                 <canvas id="profitChart"></canvas>
               </div>
@@ -531,9 +544,9 @@
               <div class="col-md-2"><label class="small fw-bold text-muted mb-1">จำนวนคลัง</label><input type="number"
                   class="form-control" id="p_stock" required min="0"></div>
               <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาทุนต่อชิ้น (฿)</label><input
-                  type="number" class="form-control" id="p_cost" required min="0"></div>
+                  type="number" class="form-control" id="p_cost" required min="0" step="0.01" placeholder="0.00"></div>
               <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาขายหน้าร้านต่อชิ้น
-                  (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0">
+                  (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0" step="0.01" placeholder="0.00">
               </div>
               <div class="col-md-12"><label class="small fw-bold text-muted mb-1"><i class="fa-brands fa-facebook text-primary"></i> ลิ้งค์อ้างอิงจาก Facebook (ถ้ามี)</label><input
                   type="url" class="form-control" id="p_fbLink" placeholder="วาง URL ของโพสต์ Facebook ที่นี่"></div>
@@ -618,11 +631,11 @@
                   class="form-select" id="saleProduct" required></select></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">ราคาที่ขายจริงต่อหน่วย (ไม่รวม
                   VAT)</label><input type="number" class="form-control text-success fw-bold" id="saleCustomPrice"
-                  required oninput="calcVAT()"></div>
+                  required step="0.01" placeholder="0.00" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">จำนวนที่ขาย</label><input type="number"
                   class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">ค่าขนส่ง (หักกำไร)</label><input type="number"
-                  class="form-control text-danger fw-bold" id="saleShippingCost" value="0" min="0" oninput="calcVAT()"></div>
+                  class="form-control text-danger fw-bold" id="saleShippingCost" value="0" min="0" step="0.01" placeholder="0.00" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text"
                   class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
               <div class="col-md-4">
@@ -660,7 +673,7 @@
                 <div class="row g-3 align-items-end">
                   <div class="col-md-4">
                     <label class="small fw-bold text-muted">ยอดมัดจำที่ลูกค้าจ่าย (บาท)</label>
-                    <input type="number" class="form-control fw-bold text-warning fs-5" id="depositAmount" min="0" step="0.01" oninput="calcDepositRemaining()" placeholder="0.00">
+                    <input type="number" class="form-control fw-bold text-warning fs-5" id="depositAmount" min="0" step="0.01" placeholder="0.00" oninput="calcDepositRemaining()">
                   </div>
                   <div class="col-md-4">
                     <label class="small fw-bold text-muted">ยอดคงเหลือที่ต้องชำระ</label>
@@ -753,6 +766,8 @@
                       <th>รายการสินค้า</th>
                       <th>จำนวน</th>
                       <th>ยอดรวมสุทธิ</th>
+                      <th>ต้นทุน/เครื่อง</th>
+                      <th>กำไร/เครื่อง</th>
                       <th>ค่าขนส่ง</th>
                       <th>ยอดมัดจำ</th>
                       <th>คงเหลือ</th>
@@ -927,11 +942,24 @@
               </div>
               <div class="col-md-3">
                 <label class="small fw-bold text-muted">หมวดหมู่บัญชี</label>
-                <input type="text" class="form-control" id="tx_category"
-                  placeholder="เช่น ค่าขนส่ง, ค่าอุปกรณ์, ซ่อมเครื่อง" required>
+                <select class="form-select" id="tx_category" required onchange="toggleCustomCategory()">
+                  <option value="">-- เลือกหมวดหมู่ --</option>
+                  <option value="ค่าน้ำ">ค่าน้ำ</option>
+                  <option value="ค่าไฟ">ค่าไฟ</option>
+                  <option value="ค่าข้าว">ค่าข้าว</option>
+                  <option value="อุปกรณ์คอมพิวเตอร์">อุปกรณ์คอมพิวเตอร์</option>
+                  <option value="ค่างวดรถ">ค่างวดรถ</option>
+                  <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                  <option value="ค่าขนส่ง">ค่าขนส่ง</option>
+                  <option value="ขายสินค้า">ขายสินค้า</option>
+                  <option value="ซื้อสินค้าเข้า">ซื้อสินค้าเข้า</option>
+                  <option value="อื่นๆ">อื่นๆ (กรอกเอง)</option>
+                </select>
+                <input type="text" class="form-control mt-2" id="tx_category_custom"
+                  placeholder="ระบุหมวดหมู่อื่นๆ เอง" style="display:none;">
               </div>
               <div class="col-md-3"><label class="small fw-bold text-muted">จำนวนเงินสุทธิ (บาท)</label><input
-                  type="number" class="form-control fw-bold" id="tx_amount" min="0" required></div>
+                  type="number" class="form-control fw-bold" id="tx_amount" min="0" step="0.01" placeholder="0.00" required></div>
               <div class="col-md-12"><label
                   class="small fw-bold text-muted">หมายเหตุอ้างอิงเอกสารเพิ่มเติม</label><input type="text"
                   class="form-control" id="tx_note" placeholder="รายละเอียดอื่นๆ เพื่อตรวจสอบทางบัญชี"></div>
@@ -1251,6 +1279,66 @@
       return dateString;
     }
 
+    // Helper: ตรวจสอบว่าวันที่อยู่ในช่วง (dateSearch filter)
+    function isInDateRange(dateStr) {
+      let fromEl = document.getElementById('dateSearchFrom');
+      let toEl = document.getElementById('dateSearchTo');
+      if (!fromEl || !toEl) return true;
+      let fromVal = fromEl.value;
+      let toVal = toEl.value;
+      if (!fromVal && !toVal) return true;
+
+      // แปลง dateStr (DD/MM/YYYY หรือ YYYY-MM-DD) เป็น YYYY-MM-DD
+      let dbDate = formatDateToDB(dateStr);
+      if (!dbDate) return true;
+      dbDate = dbDate.split('T')[0]; // ตัด time ออกถ้ามี
+
+      if (fromVal && !toVal) {
+        return dbDate === fromVal;
+      }
+      if (!fromVal && toVal) {
+        return dbDate === toVal;
+      }
+      if (fromVal && dbDate < fromVal) return false;
+      if (toVal && dbDate > toVal) return false;
+      return true;
+    }
+
+    function applyDateSearch() {
+      // เรียก render ทุกตารางใหม่
+      renderDashboard();
+      renderViewProducts();
+      renderManageProducts();
+      renderReportsTab();
+      renderTransactionsTable();
+    }
+
+    function clearDateSearch() {
+      document.getElementById('dateSearchFrom').value = '';
+      document.getElementById('dateSearchTo').value = '';
+      applyDateSearch();
+    }
+
+    // Toggle แสดง/ซ่อนช่องกรอกหมวดหมู่อื่นๆ เอง
+    function toggleCustomCategory() {
+      let selectEl = document.getElementById('tx_category');
+      let customEl = document.getElementById('tx_category_custom');
+      if (selectEl.value === 'อื่นๆ') {
+        customEl.style.display = 'block';
+        customEl.required = true;
+        customEl.focus();
+      } else {
+        customEl.style.display = 'none';
+        customEl.required = false;
+        customEl.value = '';
+      }
+    }
+
+    // Helper: format เงินแบบมีทศนิยม 2 ตำแหน่ง
+    function fmtMoney(val) {
+      return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function logout() {
       Swal.fire({
         title: 'ออกจากระบบ',
@@ -1377,6 +1465,8 @@
       });
 
       sortedSales.forEach(s => {
+        // ตรวจสอบ date range filter
+        if (!isInDateRange(s.date)) return;
         // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate เป็นวันที่นับยอด
         let effectiveDate = s.date;
         if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
@@ -1387,7 +1477,8 @@
         let sMonth = dParts[1] + "/" + dParts[2];
         let sYear = dParts[2];
 
-        if (sMonth === targetMonth) {
+        let isDateSearchActive = !!(document.getElementById('dateSearchFrom').value || document.getElementById('dateSearchTo').value);
+        if (isDateSearchActive || sMonth === targetMonth) {
           mSales += Number(s.totalSales);
           mProfit += Number(s.profit);
           mQty += Number(s.qty);
@@ -1404,7 +1495,7 @@
         yearlySales[sYear] = (yearlySales[sYear] || 0) + Number(s.totalSales);
 
         if (count < 5) {
-          recentHtml += `<tr><td>${s.date}</td><td class="text-start text-truncate" style="max-width:180px;">${s.productName}</td><td class="text-orange fw-bold">฿${Number(s.totalSales).toLocaleString()}</td><td class="text-success">฿${Number(s.profit).toLocaleString()}</td></tr>`;
+          recentHtml += `<tr><td>${s.date}</td><td class="text-start text-truncate" style="max-width:180px;">${s.productName}</td><td class="text-orange fw-bold">฿${fmtMoney(s.totalSales)}</td><td class="text-success">฿${fmtMoney(s.profit)}</td></tr>`;
           count++;
         }
       });
@@ -1418,13 +1509,13 @@
         }
       }
 
-      document.getElementById('dashSales').innerText = "฿" + mSales.toLocaleString();
-      document.getElementById('dashProfit').innerText = "฿" + mProfit.toLocaleString();
+      document.getElementById('dashSales').innerText = "฿" + fmtMoney(mSales);
+      document.getElementById('dashProfit').innerText = "฿" + fmtMoney(mProfit);
       document.getElementById('dashQty').innerText = mQty + " เครื่อง";
       document.getElementById('dashBestBrand').innerText = bestBrand !== "-" ? bestBrand : "-";
-      document.getElementById('dashYearSales').innerText = "฿" + ySales.toLocaleString();
+      document.getElementById('dashYearSales').innerText = "฿" + fmtMoney(ySales);
       document.getElementById('dashStock').innerText = totalStock + " ชิ้น";
-      document.getElementById('dashInventoryValue').innerText = "฿" + invValue.toLocaleString();
+      document.getElementById('dashInventoryValue').innerText = "฿" + fmtMoney(invValue);
       document.getElementById('dashRecentSales').innerHTML = recentHtml || '<tr><td colspan="4" class="text-muted">ไม่มีรายการขายในเดือนนี้</td></tr>';
 
       // คำนวณยอดค้างชำระ COD และมัดจำ
@@ -1433,9 +1524,9 @@
         if (s.status === 'PENDING_COD') codPending += Number(s.depositRemaining);
         if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0) depositPending += Number(s.depositRemaining);
       });
-      document.getElementById('dashCodPending').innerText = "฿" + codPending.toLocaleString();
-      document.getElementById('dashDepositPending').innerText = "฿" + depositPending.toLocaleString();
-      document.getElementById('dashMonthlyShipping').innerText = "฿" + mShipping.toLocaleString();
+      document.getElementById('dashCodPending').innerText = "฿" + fmtMoney(codPending);
+      document.getElementById('dashDepositPending').innerText = "฿" + fmtMoney(depositPending);
+      document.getElementById('dashMonthlyShipping').innerText = "฿" + fmtMoney(mShipping);
 
       if (lowStockCount > 0) {
         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
@@ -1448,17 +1539,49 @@
     }
 
     function renderCharts(targetYear, monthlySales, yearlySales) {
-      // Data for Monthly Sales
       let monthLabels = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      
+      // Data for Monthly Sales
       let mSalesData = [];
       for (let i = 1; i <= 12; i++) {
         let mStr = ("0" + i).slice(-2);
         mSalesData.push(monthlySales[mStr] || 0);
       }
 
-      // Data for Yearly Sales
-      let yearLabels = Object.keys(yearlySales).sort();
-      let ySalesData = yearLabels.map(y => yearlySales[y]);
+      // กราฟยอดขายราย 15 วัน
+      let last15DaysLabels = [];
+      let last15DaysData = [];
+      let refDate = new Date();
+      
+      let fromEl = document.getElementById('dateSearchFrom');
+      if (fromEl && fromEl.value) {
+         refDate = new Date(fromEl.value);
+      }
+      
+      let refYear = refDate.getFullYear();
+      for (let i = 14; i >= 0; i--) {
+        let d = new Date(refDate);
+        d.setDate(d.getDate() - i);
+        let dayLabel = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2);
+        last15DaysLabels.push(dayLabel);
+        last15DaysData.push(0);
+      }
+
+      globalSales.forEach(s => {
+        if (s.status === 'CANCELLED') return;
+        let dParts = s.date.split('/');
+        if (dParts.length === 3) {
+           let sDay = dParts[0];
+           let sMonthNum = dParts[1];
+           let sYearNum = dParts[2];
+           
+           let dayLabel = sDay + "/" + sMonthNum;
+           let idx = last15DaysLabels.indexOf(dayLabel);
+           if (idx !== -1 && Number(sYearNum) === refYear) {
+              last15DaysData[idx] += Number(s.totalSales);
+           }
+        }
+      });
 
       const ctxSales = document.getElementById('salesChart');
       const ctxProfit = document.getElementById('profitChart');
@@ -1478,10 +1601,25 @@
       myProfitChart = new Chart(ctxProfit, {
         type: 'line',
         data: {
-          labels: yearLabels,
-          datasets: [{ label: 'ยอดขายรายปี (บาท)', data: ySalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
+          labels: last15DaysLabels,
+          datasets: [
+            { 
+              label: 'ยอดขายรายวัน (บาท)', 
+              data: last15DaysData, 
+              backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+              borderColor: 'rgba(59, 130, 246, 1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3
+            }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { legend: { display: false } }, 
+          scales: { y: { beginAtZero: true } } 
+        }
       });
     }
 
@@ -1498,6 +1636,13 @@
           return dateOnly.startsWith(filter);
         });
       }
+
+      // ใช้ date range filter ด้วย
+      filteredProducts = filteredProducts.filter(p => {
+        if (!p.updatedAt) return false;
+        let dateOnly = p.updatedAt.split('T')[0];
+        return isInDateRange(formatDateToTH(dateOnly));
+      });
 
       if (brandFilterEl) {
         let currentBrand = brandFilterEl.value;
@@ -1540,7 +1685,7 @@
           depositStatus = '<span class="text-muted">-</span>';
         }
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td><td>${fbBtn}</td><td>${depositStatus}</td></tr>`;
+        return `<tr><td><span class="badge bg-secondary">${p.id}</span></td><td>${dateStr}</td><td class="text-start fw-medium">${p.name}</td><td>${p.brand}</td><td class="text-success fw-bold">฿${fmtMoney(p.actualPrice)}</td><td><span class="fw-bold ${p.stock < 3 ? 'text-danger' : 'text-dark'}">${p.stock}</span> เครื่อง</td><td>${fbBtn}</td><td>${depositStatus}</td></tr>`;
       }).join('');
       document.getElementById('viewData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีรายการสินค้าในระบบตามเงื่อนไขที่เลือก</td></tr>';
 
@@ -1580,16 +1725,16 @@
             }
             if (depositSales.length > 0) {
               let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
-              depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
+              depositStatus += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${fmtMoney(totalRemaining)}</small>`;
             }
             if (!depositStatus) {
               depositStatus = '<span class="text-muted">-</span>';
             }
 
-            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td><td>${depositStatus}</td></tr>`;
+            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${fmtMoney(p.actualPrice)}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${fmtMoney(value)}</td><td>${depositStatus}</td></tr>`;
          }).join('');
          
-         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td><td></td></tr>`;
+         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${fmtMoney(totalValue)}</td><td></td></tr>`;
       }
       document.getElementById('inStockSummaryData').innerHTML = html;
     }
@@ -1611,6 +1756,13 @@
           return dateOnly.startsWith(dateFilter);
         });
       }
+
+      // ใช้ date range filter (ถ้ามีการระบุวันที่ผ่านช่องค้นหาที่ navbar)
+      filteredProducts = filteredProducts.filter(p => {
+        if (!p.updatedAt) return false;
+        let dateOnly = p.updatedAt.split('T')[0];
+        return isInDateRange(formatDateToTH(dateOnly));
+      });
 
       if (brandFilterEl) {
         let currentBrand = brandFilterEl.value;
@@ -1635,7 +1787,7 @@
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button></td></tr>`;
+        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${fmtMoney(p.cost)}</td><td class="text-success">฿${fmtMoney(p.actualPrice)}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button></td></tr>`;
       }).join('');
       document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
@@ -1656,20 +1808,20 @@
       document.getElementById('pdBrand').innerText = p.brand;
       document.getElementById('pdProductId').innerText = p.id;
       document.getElementById('pdDate').innerText = dateStr;
-      document.getElementById('pdCost').innerText = '฿' + p.cost.toLocaleString();
-      document.getElementById('pdSellPrice').innerText = '฿' + p.actualPrice.toLocaleString();
+      document.getElementById('pdCost').innerText = '฿' + fmtMoney(p.cost);
+      document.getElementById('pdSellPrice').innerText = '฿' + fmtMoney(p.actualPrice);
 
       let profitEl = document.getElementById('pdProfitPerUnit');
-      profitEl.innerText = '฿' + profitPerUnit.toLocaleString();
+      profitEl.innerText = '฿' + fmtMoney(profitPerUnit);
       profitEl.className = 'fw-bold ' + (profitPerUnit >= 0 ? 'text-success' : 'text-danger');
 
       let stockEl = document.getElementById('pdStock');
       stockEl.innerHTML = `<span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-success'}">${p.stock}</span> ชิ้น`;
 
-      document.getElementById('pdTotalCostValue').innerText = '฿' + totalCostValue.toLocaleString();
-      document.getElementById('pdTotalCostCalc').innerText = `(฿${p.cost.toLocaleString()} × ${p.stock} ชิ้น)`;
-      document.getElementById('pdTotalSellValue').innerText = '฿' + totalSellValue.toLocaleString();
-      document.getElementById('pdTotalSellCalc').innerText = `(฿${p.actualPrice.toLocaleString()} × ${p.stock} ชิ้น)`;
+      document.getElementById('pdTotalCostValue').innerText = '฿' + fmtMoney(totalCostValue);
+      document.getElementById('pdTotalCostCalc').innerText = `(฿${fmtMoney(p.cost)} × ${p.stock} ชิ้น)`;
+      document.getElementById('pdTotalSellValue').innerText = '฿' + fmtMoney(totalSellValue);
+      document.getElementById('pdTotalSellCalc').innerText = `(฿${fmtMoney(p.actualPrice)} × ${p.stock} ชิ้น)`;
 
       if (p.fbLink) {
         document.getElementById('pdFbLinkRow').style.display = 'block';
@@ -1719,7 +1871,7 @@
         return a.name.localeCompare(b.name);
       });
 
-      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.actualPrice.toLocaleString()}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger' : 'bg-success'}">${p.stock}</span></td></tr>`).join('');
+      document.getElementById('liveStockBody').innerHTML = filtered.map(p => `<tr><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${fmtMoney(p.actualPrice)}</td><td><span class="badge ${p.stock < 3 ? 'bg-danger' : 'bg-success'}">${p.stock}</span></td></tr>`).join('');
     }
 
     function calcVAT() {
@@ -1834,7 +1986,7 @@
 
         let successMsg = 'บันทึกการขายและตัดสต็อกเรียบร้อย';
         if (paymentMethod === 'DEPOSIT') {
-          successMsg = `บันทึกการขาย (มัดจำ ฿${depositAmt.toLocaleString()}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${depositRemaining.toLocaleString()}`;
+          successMsg = `บันทึกการขาย (มัดจำ ฿${fmtMoney(depositAmt)}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${fmtMoney(depositRemaining)}`;
         } else if (paymentMethod === 'COD') {
           successMsg = `บันทึกออเดอร์ COD และตัดสต็อกเรียบร้อย\nสถานะ: รอดำเนินการ`;
         }
@@ -1862,13 +2014,16 @@
       let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => b.receiptId.localeCompare(a.receiptId));
 
       sortedSales.forEach(s => {
+        // ตรวจสอบ date range filter
+        if (!isInDateRange(s.date)) return;
         // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate นับยอดขายเดือนที่ได้รับเงินจริง
         let effectiveDate = s.date;
         if (s.paymentMethod === 'DEPOSIT' && s.completedDate && s.depositRemaining === 0) {
           effectiveDate = s.completedDate;
         }
         let sMonth = effectiveDate.split('/')[1] + "/" + effectiveDate.split('/')[2];
-        if (sMonth === targetMonth) {
+        let isDateSearchActive = !!(document.getElementById('dateSearchFrom').value || document.getElementById('dateSearchTo').value);
+        if (isDateSearchActive || sMonth === targetMonth) {
           totalQty += Number(s.qty);
           totalCost += Number(s.totalCost);
           totalSub += Number(s.subTotal);
@@ -1888,8 +2043,8 @@
           } else if (s.paymentMethod === 'COD') {
             if (s.status === 'PENDING_COD') {
               trClass = 'table-info';
-              depositCol = `<span class="badge bg-info text-dark"><i class="fa-solid fa-truck-fast"></i> รอ COD</span><br><span class="fw-bold text-info">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
-              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              depositCol = `<span class="badge bg-info text-dark"><i class="fa-solid fa-truck-fast"></i> รอ COD</span><br><span class="fw-bold text-info">฿${fmtMoney(s.depositRemaining)}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${fmtMoney(s.depositRemaining)}</span>`;
               actionBtns = `
                 <button class="btn btn-sm btn-success fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'COMPLETED')"><i class="fa-solid fa-check"></i> รับเงินแล้ว</button>
                 <button class="btn btn-sm btn-danger fw-bold shadow-sm mt-1" onclick="updateOrderStatus('${s.receiptId}', '${s.productId}', ${s.qty}, 'CANCELLED')"><i class="fa-solid fa-rotate-left"></i> ตีกลับ</button>
@@ -1903,8 +2058,8 @@
             let isDepositSale = s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0;
             if (isDepositSale) {
               trClass = 'table-warning';
-              depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${Number(s.depositAmount).toLocaleString()}</span>`;
-              remainCol = `<span class="fw-bold text-danger">฿${Number(s.depositRemaining).toLocaleString()}</span>`;
+              depositCol = `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> มัดจำ</span><br><span class="fw-bold text-warning">฿${fmtMoney(s.depositAmount)}</span>`;
+              remainCol = `<span class="fw-bold text-danger">฿${fmtMoney(s.depositRemaining)}</span>`;
               actionBtns = `<button class="btn btn-sm btn-warning fw-bold shadow-sm mt-1" onclick="payMoreDeposit('${s.receiptId}', ${s.depositAmount}, ${s.depositRemaining}, ${s.totalSales})"><i class="fa-solid fa-money-bill-wave"></i> ชำระเพิ่ม</button>`;
             } else if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining === 0) {
               depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> ชำระครบ</span>`;
@@ -1920,8 +2075,10 @@
               <td>${s.date}</td>
               <td class="text-start">${s.productName}</td>
               <td>${s.qty}</td>
-              <td class="text-primary fw-bold">฿${Number(s.totalSales).toLocaleString()}</td>
-              <td>${s.shippingCost > 0 ? `<span class="text-danger">-฿${s.shippingCost.toLocaleString()}</span>` : "-"}</td>
+              <td class="text-primary fw-bold">฿${fmtMoney(s.totalSales)}</td>
+              <td class="text-muted fw-bold">฿${fmtMoney(s.totalCost / s.qty)}</td>
+              <td class="text-success fw-bold">฿${fmtMoney(s.profit / s.qty)}</td>
+              <td>${s.shippingCost > 0 ? `<span class="text-danger">-฿${fmtMoney(s.shippingCost)}</span>` : "-"}</td>
               <td>${depositCol}</td>
               <td>${remainCol}</td>
               <td class="text-start">${s.cusName}</td>
@@ -1941,10 +2098,10 @@
       });
 
       document.getElementById('repQty').innerText = totalQty + " เครื่อง";
-      document.getElementById('repCost').innerText = "฿" + totalCost.toLocaleString();
-      document.getElementById('repSubTotal').innerText = "฿" + totalSub.toLocaleString();
-      document.getElementById('repProfit').innerText = "฿" + totalProfit.toLocaleString();
-      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="10" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
+      document.getElementById('repCost').innerText = "฿" + fmtMoney(totalCost);
+      document.getElementById('repSubTotal').innerText = "฿" + fmtMoney(totalSub);
+      document.getElementById('repProfit').innerText = "฿" + fmtMoney(totalProfit);
+      document.getElementById('salesHistoryData').innerHTML = historyHtml || '<tr><td colspan="13" class="text-muted">ไม่มีประวัติการขายในเดือนนี้</td></tr>';
       updateSelectedCount();
     }
 
@@ -2049,9 +2206,9 @@
             <label class="small fw-bold mb-1">ที่อยู่/เบอร์โทรศัพท์</label>
             <input id="edit_address" class="swal2-input" value="${s.address || ''}" placeholder="ที่อยู่/เบอร์โทรศัพท์">
             <label class="small fw-bold mb-1">ราคาขายจริง (ยอดรวมทั้งสิ้น)</label>
-            <input id="edit_grandTotal" class="swal2-input" type="number" value="${Number(s.totalSales)}" placeholder="ยอดรวม">
+            <input id="edit_grandTotal" class="swal2-input" type="number" step="0.01" value="${Number(s.totalSales)}" placeholder="ยอดรวม">
             <label class="small fw-bold mb-1">ค่าขนส่ง (บาท)</label>
-            <input id="edit_shippingCost" class="swal2-input" type="number" value="${Number(s.shippingCost || 0)}" placeholder="ค่าขนส่ง" min="0">
+            <input id="edit_shippingCost" class="swal2-input" type="number" step="0.01" value="${Number(s.shippingCost || 0)}" placeholder="ค่าขนส่ง" min="0">
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'บันทึกการแก้ไข',
@@ -2066,13 +2223,19 @@
       if (!formValues) return;
       Swal.showLoading();
       try {
+        let hasVat = Number(s.vat) > 0;
+        let newSubTotal = hasVat ? (formValues.grandTotal / 1.07) : formValues.grandTotal;
+        let newVat = hasVat ? (formValues.grandTotal - newSubTotal) : 0;
+
         // คำนวณกำไรใหม่: กำไร = ยอดขายก่อน VAT - ต้นทุน - ค่าขนส่ง
-        let newProfit = Number(s.subTotal) - Number(s.totalCost) - formValues.shippingCost;
+        let newProfit = newSubTotal - Number(s.totalCost) - formValues.shippingCost;
         const { error } = await supabaseClient.from('sales')
           .update({ 
             cus_name: formValues.cusName, 
             address: formValues.address, 
             grand_total: formValues.grandTotal,
+            sub_total: newSubTotal,
+            vat: newVat,
             shipping_cost: formValues.shippingCost,
             profit: newProfit
           })
@@ -2202,7 +2365,7 @@
          <td>1</td>
          <td><input type="text" class="form-control form-control-sm text-start row-desc" value="${sale.productName}" required></td>
          <td><input type="number" class="form-control form-control-sm text-center row-qty" value="${sale.qty}" min="1" required oninput="calcCustomInvoiceTotal()"></td>
-         <td><input type="number" class="form-control form-control-sm text-end row-price" value="${sale.subTotal / sale.qty}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
+         <td><input type="number" class="form-control form-control-sm text-end row-price" step="0.01" value="${sale.subTotal / sale.qty}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
          <td class="fw-bold row-total">฿${Number(sale.subTotal).toLocaleString()}</td>
          <td><button class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
       </tr>`;
@@ -2300,7 +2463,7 @@
            <td>${idx}</td>
            <td><input type="text" class="form-control form-control-sm text-start row-desc" value="${productName}" required></td>
            <td><input type="number" class="form-control form-control-sm text-center row-qty" value="1" min="1" required oninput="calcCustomInvoiceTotal()"></td>
-           <td><input type="number" class="form-control form-control-sm text-end row-price" value="${productPrice}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
+           <td><input type="number" class="form-control form-control-sm text-end row-price" step="0.01" value="${productPrice}" min="0" required oninput="calcCustomInvoiceTotal()"></td>
            <td class="fw-bold row-total">฿${productPrice.toLocaleString()}</td>
            <td><button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
         `;
@@ -2319,7 +2482,7 @@
          <td>${idx}</td>
          <td><input type="text" class="form-control form-control-sm text-start row-desc" placeholder="ระบุรายการสินค้า" required></td>
          <td><input type="number" class="form-control form-control-sm text-center row-qty" value="1" min="1" required oninput="calcCustomInvoiceTotal()"></td>
-         <td><input type="number" class="form-control form-control-sm text-end row-price" value="0" min="0" required oninput="calcCustomInvoiceTotal()"></td>
+         <td><input type="number" class="form-control form-control-sm text-end row-price" step="0.01" value="0" min="0" required oninput="calcCustomInvoiceTotal()"></td>
          <td class="fw-bold row-total">฿0.00</td>
          <td><button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('tr').remove();calcCustomInvoiceTotal();"><i class="fa-solid fa-trash"></i></button></td>
       `;
@@ -2468,7 +2631,10 @@
       sortedTx.forEach(t => {
         let parts = t.date.split('/');
         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
-        if (tMonth === targetMonth) {
+        // ตรวจสอบ date range filter
+        if (!isInDateRange(t.date)) return;
+        let isDateSearchActive = !!(document.getElementById('dateSearchFrom').value || document.getElementById('dateSearchTo').value);
+        if (isDateSearchActive || tMonth === targetMonth) {
           if (t.type === 'รายรับ') sumIncome += Number(t.amount);
           if (t.type === 'รายจ่าย') sumExpense += Number(t.amount);
 
@@ -2485,7 +2651,7 @@
                  <td>${t.date}</td>
                  <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
                  <td class="text-start fw-medium">${t.category}</td>
-                 <td class="fw-bold">฿${Number(t.amount).toLocaleString()}</td>
+                 <td class="fw-bold">฿${fmtMoney(t.amount)}</td>
                  <td class="text-start text-muted" style="font-size:0.85rem;">${t.note || '-'}</td>
                  <td>${actionButtons}</td>
               </tr>`;
@@ -2568,10 +2734,18 @@
     async function submitTransaction(e) {
       e.preventDefault();
       let id = document.getElementById('tx_id').value;
+      let categoryVal = document.getElementById('tx_category').value;
+      if (categoryVal === 'อื่นๆ') {
+        categoryVal = document.getElementById('tx_category_custom').value;
+        if (!categoryVal || categoryVal.trim() === '') {
+          Swal.fire('เตือน', 'กรุณาระบุหมวดหมู่อื่นๆ', 'warning');
+          return;
+        }
+      }
       let txData = {
         date: document.getElementById('tx_date').value,
         type: document.getElementById('tx_type').value,
-        category: document.getElementById('tx_category').value,
+        category: categoryVal,
         amount: Number(document.getElementById('tx_amount').value),
         note: document.getElementById('tx_note').value
       };
@@ -2613,7 +2787,26 @@
       if (parts.length === 3) document.getElementById('tx_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
       document.getElementById('tx_type').value = type;
-      document.getElementById('tx_category').value = category;
+      
+      // ตรวจสอบว่า category อยู่ใน dropdown หรือไม่
+      let selectEl = document.getElementById('tx_category');
+      let optionFound = false;
+      for (let i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value === category) {
+          optionFound = true;
+          break;
+        }
+      }
+      if (optionFound) {
+        selectEl.value = category;
+        document.getElementById('tx_category_custom').style.display = 'none';
+      } else {
+        selectEl.value = 'อื่นๆ';
+        document.getElementById('tx_category_custom').style.display = 'block';
+        document.getElementById('tx_category_custom').value = category;
+        document.getElementById('tx_category_custom').required = true;
+      }
+      
       document.getElementById('tx_amount').value = amount;
       document.getElementById('tx_note').value = note;
 
@@ -2627,6 +2820,9 @@
       document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
       document.getElementById('txForm').reset();
       document.getElementById('tx_id').value = '';
+      document.getElementById('tx_category_custom').style.display = 'none';
+      document.getElementById('tx_category_custom').value = '';
+      document.getElementById('tx_category_custom').required = false;
       document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
       document.getElementById('btnCancelTxEdit').classList.add('d-none');
