@@ -401,6 +401,27 @@
           </div>
         </div>
 
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-4 col-lg-4">
+            <div class="stat-card px-3 py-4 border-start border-info border-4 bg-light">
+              <h6>รายรับอื่นๆ (ไม่รวมโน๊ตบุ๊ค)</h6>
+              <h3 class="text-info" id="dashOtherIncome">฿0</h3><i class="fa-solid fa-piggy-bank bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-4">
+            <div class="stat-card px-3 py-4 border-start border-warning border-4 bg-light">
+              <h6>รายจ่ายอื่นๆ (ไม่รวมโน๊ตบุ๊ค)</h6>
+              <h3 class="text-warning" id="dashOtherExpense">฿0</h3><i class="fa-solid fa-wallet bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-4">
+            <div class="stat-card px-3 py-4 border-start border-secondary border-4 bg-light">
+              <h6>คงเหลือสุทธิอื่นๆ</h6>
+              <h3 class="text-secondary" id="dashOtherBalance">฿0</h3><i class="fa-solid fa-coins bg-icon"></i>
+            </div>
+          </div>
+        </div>
+
         <div class="row mb-4">
           <div class="col-12">
             <div class="stat-card bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4">
@@ -886,6 +907,10 @@
                 id="qtCusName" class="form-control form-control-sm"></div>
             <div class="col-md-6"><label class="small fw-bold">ที่อยู่ลูกค้า</label><input type="text" id="qtCusAddress"
                 class="form-control form-control-sm"></div>
+            <div class="col-md-6"><label class="small fw-bold">เลขที่ผู้เสียภาษีลูกค้า</label><input type="text" id="qtCusTaxId"
+                class="form-control form-control-sm"></div>
+            <div class="col-md-6"><label class="small fw-bold">เบอร์โทรศัพท์</label><input type="text" id="qtCusPhone"
+                class="form-control form-control-sm"></div>
           </div>
           <div class="card p-3 mb-3 border-start border-info border-4 bg-light">
             <label class="small fw-bold text-info mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> เลือกสินค้าจากคลังเพื่อเพิ่มลงในรายการ</label>
@@ -1014,6 +1039,27 @@
           </div>
         </div>
 
+        <div class="row mt-1" id="txSummaryOtherSection">
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-info border-4 h-100 bg-light">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-piggy-bank text-info me-1"></i> รวมรายรับ (อื่นๆ ที่ไม่ใช่โน๊ตบุ๊ค)</h6>
+              <h4 class="fw-bold text-info m-0" id="txSumIncomeOther">฿0</h4>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-warning border-4 h-100 bg-light">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-wallet text-warning me-1"></i> รวมรายจ่าย (อื่นๆ ที่ไม่ใช่โน๊ตบุ๊ค)</h6>
+              <h4 class="fw-bold text-warning m-0" id="txSumExpenseOther">฿0</h4>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm border-start border-secondary border-4 h-100 bg-light">
+              <h6 class="text-muted fw-bold mb-2"><i class="fa-solid fa-coins text-secondary me-1"></i> คงเหลือสุทธิ (อื่นๆ)</h6>
+              <h4 class="fw-bold text-secondary m-0" id="txSumBalanceOther">฿0</h4>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1085,6 +1131,8 @@
           <strong>ข้อมูลลูกค้า / Customer Details :</strong><br>
           <div class="mt-1"><strong>ชื่อ:</strong> <span id="invCusName"></span></div>
           <div><strong>ที่อยู่จัดส่ง / สาขา:</strong> <span id="invCusAddress"></span></div>
+          <div><strong>เลขประจำตัวผู้เสียภาษี:</strong> <span id="invCusTaxId"></span></div>
+          <div><strong>เบอร์โทรศัพท์:</strong> <span id="invCusPhone"></span></div>
         </div>
         <table class="table table-bordered align-middle text-center" style="font-size:0.95rem;">
           <thead class="table-light">
@@ -1527,6 +1575,32 @@
       document.getElementById('dashCodPending').innerText = "฿" + fmtMoney(codPending);
       document.getElementById('dashDepositPending').innerText = "฿" + fmtMoney(depositPending);
       document.getElementById('dashMonthlyShipping').innerText = "฿" + fmtMoney(mShipping);
+
+      let mOtherIncome = 0;
+      let mOtherExpense = 0;
+      let isDateSearchActiveDash = !!((document.getElementById('dateSearchFrom') && document.getElementById('dateSearchFrom').value) || (document.getElementById('dateSearchTo') && document.getElementById('dateSearchTo').value));
+      
+      globalTransactions.forEach(t => {
+         if (t.note === 'DELETED_AUTO') return;
+         let parts = (t.date || "").split('/');
+         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+         if (typeof isInDateRange === 'function' && !isInDateRange(t.date)) return;
+         if (isDateSearchActiveDash || tMonth === targetMonth) {
+            if (t.type === 'รายรับ') mOtherIncome += Number(t.amount);
+            if (t.type === 'รายจ่าย') mOtherExpense += Number(t.amount);
+         }
+      });
+      
+      let mOtherBalance = mOtherIncome - mOtherExpense;
+      let dashOtherIncEl = document.getElementById('dashOtherIncome');
+      if (dashOtherIncEl) dashOtherIncEl.innerText = "฿" + fmtMoney(mOtherIncome);
+      let dashOtherExpEl = document.getElementById('dashOtherExpense');
+      if (dashOtherExpEl) dashOtherExpEl.innerText = "฿" + fmtMoney(mOtherExpense);
+      let dashOtherBalEl = document.getElementById('dashOtherBalance');
+      if (dashOtherBalEl) {
+          dashOtherBalEl.innerText = "฿" + fmtMoney(mOtherBalance);
+          dashOtherBalEl.className = mOtherBalance >= 0 ? "text-secondary mt-3 fw-bold fs-4" : "text-danger mt-3 fw-bold fs-4";
+      }
 
       if (lowStockCount > 0) {
         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
@@ -2359,6 +2433,8 @@
       document.getElementById('qtDocId').value = sale.receiptId;
       document.getElementById('qtCusName').value = sale.cusName;
       document.getElementById('qtCusAddress').value = sale.address;
+      document.getElementById('qtCusTaxId').value = "";
+      document.getElementById('qtCusPhone').value = "";
 
       let tbody = document.getElementById('qtTableBody');
       tbody.innerHTML = `<tr>
@@ -2511,6 +2587,8 @@
       document.getElementById('invTerm').innerText = document.getElementById('qtPaymentTerm').value;
       document.getElementById('invCusName').innerText = document.getElementById('qtCusName').value || 'ลูกค้าทั่วไป';
       document.getElementById('invCusAddress').innerText = document.getElementById('qtCusAddress').value || '-';
+      document.getElementById('invCusTaxId').innerText = document.getElementById('qtCusTaxId').value || '-';
+      document.getElementById('invCusPhone').innerText = document.getElementById('qtCusPhone').value || '-';
 
       let rows = document.querySelectorAll('#qtTableBody tr');
       let html = '', subTotal = 0;
@@ -2619,6 +2697,8 @@
       let allTx = getAllTransactions();
       let sumIncome = 0;
       let sumExpense = 0;
+      let sumIncomeOther = 0;
+      let sumExpenseOther = 0;
 
       // เรียงจากใหม่ไปเก่า
       let sortedTx = allTx.sort((a, b) => {
@@ -2635,8 +2715,14 @@
         if (!isInDateRange(t.date)) return;
         let isDateSearchActive = !!(document.getElementById('dateSearchFrom').value || document.getElementById('dateSearchTo').value);
         if (isDateSearchActive || tMonth === targetMonth) {
-          if (t.type === 'รายรับ') sumIncome += Number(t.amount);
-          if (t.type === 'รายจ่าย') sumExpense += Number(t.amount);
+          if (t.type === 'รายรับ') {
+            sumIncome += Number(t.amount);
+            if (t.source === 'manual') sumIncomeOther += Number(t.amount);
+          }
+          if (t.type === 'รายจ่าย') {
+            sumExpense += Number(t.amount);
+            if (t.source === 'manual') sumExpenseOther += Number(t.amount);
+          }
 
           let actionButtons = `
             <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
@@ -2671,6 +2757,21 @@
          } else {
             balEl.classList.remove('text-primary');
             balEl.classList.add('text-danger');
+         }
+
+         if (document.getElementById('txSumIncomeOther')) {
+           document.getElementById('txSumIncomeOther').innerText = '฿' + sumIncomeOther.toLocaleString();
+           document.getElementById('txSumExpenseOther').innerText = '฿' + sumExpenseOther.toLocaleString();
+           let balanceOther = sumIncomeOther - sumExpenseOther;
+           let balOtherEl = document.getElementById('txSumBalanceOther');
+           balOtherEl.innerText = '฿' + balanceOther.toLocaleString();
+           if (balanceOther >= 0) {
+              balOtherEl.classList.remove('text-danger');
+              balOtherEl.classList.add('text-secondary');
+           } else {
+              balOtherEl.classList.remove('text-secondary');
+              balOtherEl.classList.add('text-danger');
+           }
          }
       }
     }
