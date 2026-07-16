@@ -569,6 +569,18 @@
               <div class="col-md-6"><label class="small fw-bold text-muted mb-1">ราคาขายหน้าร้านต่อชิ้น
                   (฿)</label><input type="number" class="form-control text-success" id="p_actualPrice" required min="0" step="0.01" placeholder="0.00">
               </div>
+
+              <!-- New Product Specification Fields -->
+              <div class="col-12 mt-4 mb-2"><h6 class="fw-bold text-secondary border-bottom pb-2"><i class="fa-solid fa-microchip me-1"></i> ข้อมูลสเปคสินค้า (ถ้ามี)</h6></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted mb-1">Serial Number</label><input type="text" class="form-control" id="p_serialNumber" placeholder="S/N"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted mb-1">หน่วยประมวลผล (CPU)</label><input type="text" class="form-control" id="p_cpu" placeholder="เช่น Core i5, Ryzen 5"></div>
+              <div class="col-md-4"><label class="small fw-bold text-muted mb-1">หน่วยความจำ (RAM)</label><input type="text" class="form-control" id="p_ram" placeholder="เช่น 8GB, 16GB"></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">การ์ดจอ (GPU)</label><input type="text" class="form-control" id="p_gpu" placeholder="เช่น RTX 3050"></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">ขนาดหน้าจอ</label><input type="text" class="form-control" id="p_screenSize" placeholder="เช่น 15.6 inch"></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">สีตัวเครื่อง</label><input type="text" class="form-control" id="p_color" placeholder="เช่น Black, Silver"></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1">ระยะเวลาประกัน</label><input type="text" class="form-control" id="p_warranty" placeholder="เช่น 1 ปี, 6 เดือน"></div>
+              <!-- End New Fields -->
+
               <div class="col-md-12"><label class="small fw-bold text-muted mb-1"><i class="fa-brands fa-facebook text-primary"></i> ลิ้งค์อ้างอิงจาก Facebook (ถ้ามี)</label><input
                   type="url" class="form-control" id="p_fbLink" placeholder="วาง URL ของโพสต์ Facebook ที่นี่"></div>
             </div>
@@ -1248,6 +1260,26 @@
               <h5 class="fw-bold mt-1" id="pdDate">-</h5>
             </div>
           </div>
+          
+          <hr style="border-color:#e2e8f0; margin-top: 20px; margin-bottom: 20px;">
+          <h6 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-list me-1"></i> ข้อมูลสเปคเครื่อง (Specification)</h6>
+          <div class="row g-3">
+            <div class="col-6">
+              <table class="table table-sm table-borderless m-0">
+                <tr><td class="text-muted" style="width: 100px;">S/N:</td><td class="fw-bold" id="pdSerialNumber">-</td></tr>
+                <tr><td class="text-muted">CPU:</td><td class="fw-bold" id="pdCpu">-</td></tr>
+                <tr><td class="text-muted">RAM:</td><td class="fw-bold" id="pdRam">-</td></tr>
+                <tr><td class="text-muted">GPU:</td><td class="fw-bold" id="pdGpu">-</td></tr>
+              </table>
+            </div>
+            <div class="col-6">
+              <table class="table table-sm table-borderless m-0">
+                <tr><td class="text-muted" style="width: 100px;">หน้าจอ:</td><td class="fw-bold" id="pdScreenSize">-</td></tr>
+                <tr><td class="text-muted">สี:</td><td class="fw-bold" id="pdColor">-</td></tr>
+                <tr><td class="text-muted">ประกัน:</td><td class="fw-bold" id="pdWarranty">-</td></tr>
+              </table>
+            </div>
+          </div>
         </div>
 
         <table class="table table-bordered align-middle text-center" style="font-size: 0.95rem;">
@@ -1308,6 +1340,21 @@
     let globalProducts = [], globalSales = [], globalTransactions = [];
     let mySalesChart = null;
     let myProfitChart = null;
+
+    async function sendLineNotification(message) {
+      if (typeof LINE_WEBHOOK_URL !== 'undefined' && LINE_WEBHOOK_URL.trim() !== '') {
+        try {
+          await fetch(LINE_WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'notify_sale', message: message })
+          });
+        } catch (e) {
+          console.error('Failed to send LINE notification', e);
+        }
+      }
+    }
 
     // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY (สำหรับแสดงผล)
     function formatDateToTH(dateString) {
@@ -1409,7 +1456,18 @@
     // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
     // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
     function mapProduct(p) {
-      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
+      return { 
+        id: p.id, name: p.name, brand: p.brand, 
+        cost: Number(p.cost), actualPrice: Number(p.actual_price), 
+        stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "",
+        serialNumber: p.serial_number || "",
+        cpu: p.cpu || "",
+        ram: p.ram || "",
+        gpu: p.gpu || "",
+        screenSize: p.screen_size || "",
+        color: p.color || "",
+        warranty: p.warranty || ""
+      };
     }
     function mapSale(s) {
       return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED', completedDate: s.completed_date ? formatDateToTH(s.completed_date) : null };
@@ -1861,7 +1919,7 @@
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${fmtMoney(p.cost)}</td><td class="text-success">฿${fmtMoney(p.actualPrice)}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button></td></tr>`;
+        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${fmtMoney(p.cost)}</td><td class="text-success">฿${fmtMoney(p.actualPrice)}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button></td></tr>`;
       }).join('');
       document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
@@ -1896,6 +1954,14 @@
       document.getElementById('pdTotalCostCalc').innerText = `(฿${fmtMoney(p.cost)} × ${p.stock} ชิ้น)`;
       document.getElementById('pdTotalSellValue').innerText = '฿' + fmtMoney(totalSellValue);
       document.getElementById('pdTotalSellCalc').innerText = `(฿${fmtMoney(p.actualPrice)} × ${p.stock} ชิ้น)`;
+
+      document.getElementById('pdSerialNumber').innerText = p.serialNumber || "-";
+      document.getElementById('pdCpu').innerText = p.cpu || "-";
+      document.getElementById('pdRam').innerText = p.ram || "-";
+      document.getElementById('pdGpu').innerText = p.gpu || "-";
+      document.getElementById('pdScreenSize').innerText = p.screenSize || "-";
+      document.getElementById('pdColor').innerText = p.color || "-";
+      document.getElementById('pdWarranty').innerText = p.warranty || "-";
 
       if (p.fbLink) {
         document.getElementById('pdFbLinkRow').style.display = 'block';
@@ -2059,12 +2125,17 @@
         if (stockErr) throw stockErr;
 
         let successMsg = 'บันทึกการขายและตัดสต็อกเรียบร้อย';
+        let payType = paymentMethod === 'DEPOSIT' ? 'มัดจำ' : (paymentMethod === 'COD' ? 'COD' : 'เงินสด/โอน');
+        
         if (paymentMethod === 'DEPOSIT') {
           successMsg = `บันทึกการขาย (มัดจำ ฿${fmtMoney(depositAmt)}) และตัดสต็อกเรียบร้อย\nยอดคงเหลือ: ฿${fmtMoney(depositRemaining)}`;
         } else if (paymentMethod === 'COD') {
           successMsg = `บันทึกออเดอร์ COD และตัดสต็อกเรียบร้อย\nสถานะ: รอดำเนินการ`;
         }
         Swal.fire('สำเร็จ!', successMsg, 'success');
+
+        // แจ้งเตือน LINE
+        sendLineNotification(`🛒 [รายการขายใหม่]\nสินค้า: ${saleData.product_name}\nจำนวน: ${saleData.qty} เครื่อง\nยอดรวม: ฿${fmtMoney(saleData.grand_total)}\nลูกค้า: ${saleData.cus_name}\nรูปแบบ: ${payType}`);
         document.getElementById('formSale').reset();
         document.getElementById('payCash').checked = true;
         if(document.getElementById('isVatEnabled')) document.getElementById('isVatEnabled').checked = true;
@@ -2978,7 +3049,14 @@
         cost: Number(document.getElementById('p_cost').value),
         actual_price: Number(document.getElementById('p_actualPrice').value),
         stock: Number(document.getElementById('p_stock').value),
-        fb_link: document.getElementById('p_fbLink').value || null
+        fb_link: document.getElementById('p_fbLink').value || null,
+        serial_number: document.getElementById('p_serialNumber').value || null,
+        cpu: document.getElementById('p_cpu').value || null,
+        ram: document.getElementById('p_ram').value || null,
+        gpu: document.getElementById('p_gpu').value || null,
+        screen_size: document.getElementById('p_screenSize').value || null,
+        color: document.getElementById('p_color').value || null,
+        warranty: document.getElementById('p_warranty').value || null
       };
 
       Swal.showLoading();
@@ -2990,6 +3068,8 @@
           prodData.id = "PROD-" + Date.now();
           const { error } = await supabaseClient.from('products').insert([prodData]);
           if (error) throw error;
+
+          sendLineNotification(`📦 [รายการซื้อเข้าใหม่]\nสินค้า: ${prodData.name}\nแบรนด์: ${prodData.brand}\nจำนวน: ${prodData.stock} เครื่อง\nต้นทุน/เครื่อง: ฿${fmtMoney(prodData.cost)}\nรวม: ฿${fmtMoney(prodData.cost * prodData.stock)}`);
         }
         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
         resetProductForm();
@@ -3000,10 +3080,13 @@
       }
     }
 
-    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "") {
-      document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
-      document.getElementById('p_id').value = id;
-      // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
+    function editProduct(productId) {
+      let p = globalProducts.find(x => String(x.id) === String(productId));
+      if (!p) return;
+      document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + p.id + ")";
+      document.getElementById('p_id').value = p.id;
+      
+      let date = p.updatedAt;
       if (date && date.includes('T')) {
         document.getElementById('p_date').value = date.split('T')[0];
       } else if (date && date.includes('/')) {
@@ -3012,12 +3095,21 @@
       } else if (date) {
         document.getElementById('p_date').value = date;
       }
-      document.getElementById('p_name').value = name;
-      document.getElementById('p_brand').value = brand;
-      document.getElementById('p_cost').value = cost;
-      document.getElementById('p_actualPrice').value = actualPrice;
-      document.getElementById('p_stock').value = stock;
-      document.getElementById('p_fbLink').value = fbLink && fbLink !== 'undefined' ? fbLink : "";
+      document.getElementById('p_name').value = p.name;
+      document.getElementById('p_brand').value = p.brand;
+      document.getElementById('p_cost').value = p.cost;
+      document.getElementById('p_actualPrice').value = p.actualPrice;
+      document.getElementById('p_stock').value = p.stock;
+      document.getElementById('p_fbLink').value = p.fbLink && p.fbLink !== 'undefined' ? p.fbLink : "";
+      
+      document.getElementById('p_serialNumber').value = p.serialNumber || "";
+      document.getElementById('p_cpu').value = p.cpu || "";
+      document.getElementById('p_ram').value = p.ram || "";
+      document.getElementById('p_gpu').value = p.gpu || "";
+      document.getElementById('p_screenSize').value = p.screenSize || "";
+      document.getElementById('p_color').value = p.color || "";
+      document.getElementById('p_warranty').value = p.warranty || "";
+
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
