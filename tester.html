@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบโน๊ตบุ๊ค (Notebook Tester) - ไอทีอุดร</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.15), transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0;
+            color: var(--text-muted);
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 90%;
+            margin: 3rem auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+        
+        .btn-green {
+            background: var(--accent);
+        }
+        
+        .btn-green:hover {
+            background: #059669;
+        }
+
+        .spec-list {
+            text-align: left;
+            width: 100%;
+            margin-top: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .spec-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .spec-label {
+            color: var(--text-muted);
+        }
+
+        .spec-value {
+            font-weight: 500;
+            color: #60a5fa;
+            text-align: right;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+
+        /* Fullscreen Screen Tester overlay */
+        #screen-tester {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            display: none;
+            cursor: pointer;
+        }
+        
+        .screen-tester-tip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-size: 1.2rem;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .back-link {
+            margin-top: 2rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s;
+        }
+        
+        .back-link:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i class="fas fa-laptop-medical"></i> Notebook Tester Pro</h1>
+        <p>เครื่องมือตรวจสอบสภาพโน๊ตบุ๊คเบื้องต้น</p>
+    </div>
+
+    <div class="container">
+        <!-- 1. Screen Tester -->
+        <div class="card">
+            <div class="card-icon" style="color: #f43f5e; background: rgba(244, 63, 94, 0.1);">
+                <i class="fas fa-tv"></i>
+            </div>
+            <h2 class="card-title">ทดสอบหน้าจอ (Dead Pixel)</h2>
+            <p class="card-desc">ตรวจสอบหาจุด Dead Pixel หรือจุดสีเพี้ยนบนหน้าจอ โดยระบบจะแสดงสีแม่สีเต็มหน้าจอ (แดง เขียว น้ำเงิน ขาว ดำ) ให้คุณสังเกตได้ง่ายขึ้น</p>
+            <button class="btn" onclick="startScreenTest()">
+                <i class="fas fa-play"></i> เริ่มทดสอบจอ
+            </button>
+        </div>
+
+        <!-- 2. Audio Tester -->
+        <div class="card">
+            <div class="card-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.1);">
+                <i class="fas fa-headphones"></i>
+            </div>
+            <h2 class="card-title">ทดสอบระบบเสียง (Stereo)</h2>
+            <p class="card-desc">ทดสอบการทำงานของลำโพงซ้ายและขวาว่าทำงานปกติหรือไม่ โดยไม่ต้องเปิด YouTube</p>
+            <div style="display: flex; gap: 1rem; width: 100%;">
+                <button class="btn" onclick="playTestTone('left')">
+                    <i class="fas fa-volume-up"></i> ซ้าย (L)
+                </button>
+                <button class="btn" onclick="playTestTone('right')">
+                    <i class="fas fa-volume-up"></i> ขวา (R)
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Specs Info -->
+        <div class="card">
+            <div class="card-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <h2 class="card-title">ข้อมูลสเปคเบื้องต้น</h2>
+            <p class="card-desc">ข้อมูลฮาร์ดแวร์และระบบปฏิบัติการที่เบราว์เซอร์สามารถอ่านได้</p>
+            
+            <button class="btn btn-green" onclick="loadSpecs()" id="btnLoadSpecs">
+                <i class="fas fa-search"></i> อ่านข้อมูลเครื่อง
+            </button>
+            
+            <div class="spec-list" id="specList" style="display: none;">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> กลับไปหน้าระบบจัดการ</a>
+
+    <!-- Fullscreen Color Element -->
+    <div id="screen-tester" onclick="nextColor()">
+        <div class="screen-tester-tip" id="screenTip">คลิกเมาส์เพื่อเปลี่ยนสี (กด ESC เพื่อออก)</div>
+    </div>
+
+    <script>
+        // ==========================
+        // 1. Screen Test Logic
+        // ==========================
+        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFFFF', '#000000'];
+        let currentColorIndex = 0;
+        const screenTesterEl = document.getElementById('screen-tester');
+        const screenTip = document.getElementById('screenTip');
+        let tipTimeout;
+
+        function startScreenTest() {
+            currentColorIndex = 0;
+            screenTesterEl.style.display = 'block';
+            screenTesterEl.style.backgroundColor = colors[currentColorIndex];
+            
+            // Enter Fullscreen
+            if (screenTesterEl.requestFullscreen) {
+                screenTesterEl.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+                });
+            }
+
+            screenTip.style.opacity = '1';
+            clearTimeout(tipTimeout);
+            tipTimeout = setTimeout(() => {
+                screenTip.style.opacity = '0';
+            }, 3000);
+        }
+
+        function nextColor() {
+            currentColorIndex++;
+            if (currentColorIndex >= colors.length) {
+                // End test
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                screenTesterEl.style.display = 'none';
+            } else {
+                screenTesterEl.style.backgroundColor = colors[currentColorIndex];
+            }
+        }
+
+        // Handle ESC key or exiting fullscreen manually
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                screenTesterEl.style.display = 'none';
+            }
+        });
+
+        // ==========================
+        // 2. Audio Test Logic
+        // ==========================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTestTone(channel) {
+            // Resume context if suspended (browser autoplay policy)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const oscillator = audioCtx.createOscillator();
+            const panner = audioCtx.createStereoPanner();
+            const gainNode = audioCtx.createGain();
+
+            // Set type and frequency (beep sound)
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440; // A4 note
+
+            // Set panning: -1 for left, 1 for right
+            panner.pan.value = (channel === 'left') ? -1 : 1;
+
+            // Fade out to avoid clicks
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+
+            // Connect nodes
+            oscillator.connect(panner);
+            panner.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            // Play for 1.5 seconds
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1.5);
+        }
+
+        // ==========================
+        // 3. Spec Check Logic
+        // ==========================
+        function loadSpecs() {
+            const specList = document.getElementById('specList');
+            const btn = document.getElementById('btnLoadSpecs');
+            
+            btn.style.display = 'none';
+            specList.style.display = 'block';
+
+            let html = '';
+
+            const addSpec = (label, value) => {
+                html += `
+                    <div class="spec-item">
+                        <div class="spec-label">${label}</div>
+                        <div class="spec-value">${value}</div>
+                    </div>
+                `;
+            };
+
+            // Get OS Info
+            const platform = navigator.platform || "ไม่ทราบ";
+            let os = platform;
+            if (navigator.userAgent.indexOf("Win") !== -1) os = "Windows";
+            if (navigator.userAgent.indexOf("Mac") !== -1) os = "MacOS";
+            if (navigator.userAgent.indexOf("Linux") !== -1) os = "Linux";
+            
+            addSpec("ระบบปฏิบัติการ", os);
+            
+            // Get Cores
+            const cores = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + " Cores" : "ไม่รองรับ";
+            addSpec("จำนวนคอร์ CPU (Logical)", cores);
+
+            // Get RAM
+            const ram = navigator.deviceMemory ? navigator.deviceMemory + " GB" : "ไม่รองรับ";
+            addSpec("ขนาด RAM (โดยประมาณ)", ram);
+
+            // Screen Resolution
+            const screenW = window.screen.width;
+            const screenH = window.screen.height;
+            const colorDepth = window.screen.colorDepth;
+            addSpec("ความละเอียดหน้าจอ", `${screenW} x ${screenH} (${colorDepth}-bit)`);
+
+            // GPU (using WebGL)
+            let gpu = "ไม่สามารถอ่านได้";
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                        // Clean up string a bit if it has ANGLE or Direct3D stuff
+                        if (gpu.includes('ANGLE')) {
+                            const match = gpu.match(/ANGLE \([^,]+, (.+) Direct3D/);
+                            if (match && match[1]) gpu = match[1];
+                        }
+                    }
+                }
+            } catch (e) {}
+            addSpec("การ์ดจอ (GPU)", gpu);
+
+            // CPU Model and Mainboard (Browser limitation)
+            addSpec("รุ่น CPU", "<span style='font-size: 0.8rem; color: #f87171;'>เบราว์เซอร์ไม่สามารถอ่านข้อมูลนี้ได้</span>");
+            addSpec("เมนบอร์ด (Mainboard)", "<span style='font-size: 0.8rem; color: #f87171;'>เบราว์เซอร์ไม่สามารถอ่านข้อมูลนี้ได้</span>");
+
+            // Network
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                addSpec("การเชื่อมต่อเน็ตเวิร์ค", `${connection.effectiveType || "Unknown"} (Downlink: ${connection.downlink || 0} Mbps)`);
+            }
+
+            // Battery (if supported)
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(function(battery) {
+                    const level = Math.round(battery.level * 100) + "%";
+                    const isCharging = battery.charging ? "กำลังชาร์จ ⚡" : "ใช้แบตเตอรี่ 🔋";
+                    addSpec("สถานะแบตเตอรี่", `${level} (${isCharging})`);
+                    specList.innerHTML = html; // Update again with battery
+                });
+            } else {
+                addSpec("สถานะแบตเตอรี่", "เบราว์เซอร์ไม่รองรับ API");
+            }
+
+            specList.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
