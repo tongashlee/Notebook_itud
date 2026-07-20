@@ -1563,7 +1563,7 @@
           renderSavings();
       } catch (error) {
         console.error("Error fetching data:", error);
-        Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Supabase', 'error');
+        Swal.fire('แจ้งเตือน', 'ข้อผิดพลาด: ' + (error.message || JSON.stringify(error)), 'error');
       }
     }
 
@@ -2709,10 +2709,10 @@
       let allTx = getAllTransactions();
       // เรียงจากใหม่ไปเก่า
       let sortedTx = allTx.sort((a, b) => {
-        let dateA = a.date.split('/').reverse().join('');
-        let dateB = b.date.split('/').reverse().join('');
+        let dateA = (a.date || '').split('/').reverse().join('');
+        let dateB = (b.date || '').split('/').reverse().join('');
         if (dateA !== dateB) return dateB.localeCompare(dateA);
-        return b.id.localeCompare(a.id);
+        return (b.id || '').localeCompare(a.id || '');
       });
 
       sortedTx.forEach(t => {
@@ -3009,7 +3009,7 @@
         let dateA = a.date.split('/').reverse().join('');
         let dateB = b.date.split('/').reverse().join('');
         if (dateA !== dateB) return dateB.localeCompare(dateA);
-        return b.id.localeCompare(a.id);
+        return (b.id || '').localeCompare(a.id || '');
       });
       
       savings.forEach(function(t) {
@@ -3035,7 +3035,7 @@
                '<td>' + t.date + '</td>' +
                '<td><span class="badge border border-primary text-primary">' + (t.bank || '-') + '</span></td>' +
                '<td class="text-start fw-medium text-muted">' + displayMonth + '</td>' +
-               '<td class="fw-bold text-success">\u0e3f' + fmtMoney(t.amount) + '</td>' +
+               '<td class="fw-bold text-success">\u0e3f' + Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>' +
                '<td>' + actionButtons + '</td>' +
             '</tr>';
       });
@@ -3043,7 +3043,7 @@
       document.getElementById('savingsTableBody').innerHTML = html || '<tr><td colspan="6" class="text-muted text-center py-3">ยังไม่มีประวัติการฝากเงิน</td></tr>';
       
       // Update Dashboard Cards
-      document.getElementById('totalSavingsValue').innerText = '฿' + totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      let tsv = document.getElementById('totalSavingsValue'); if(tsv) tsv.innerText = '฿' + totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2 });
       
       let dashboardContainer = document.getElementById('savingsDashboardCards');
       if(dashboardContainer) {
@@ -3051,7 +3051,7 @@
           let totalCardHtml = `<div class="col-md-4 mb-3">
             <div class="stat-card bg-white px-3 py-4 border-start border-warning border-4 shadow-sm h-100">
               <h6>ยอดเงินฝากสะสมรวม</h6>
-              <h3 class="text-warning fw-bold m-0">฿${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+              <h3 class="text-warning fw-bold m-0" id="totalSavingsValue">฿${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
               <i class="fa-solid fa-piggy-bank bg-icon"></i>
             </div>
           </div>`;
