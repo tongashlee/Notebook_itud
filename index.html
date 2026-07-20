@@ -1001,6 +1001,10 @@
                     <option value="ธนาคารยูโอบี">ธนาคารยูโอบี</option>
                   </select>
                 </div>
+                <div class="col-md-3">
+                  <label class="small fw-bold text-muted mb-1">ชื่อบัญชี / สาขา (ถ้ามี)</label>
+                  <input type="text" class="form-control" id="sv_account" placeholder="เช่น บัญชีลูก, สาขาสยาม">
+                </div>
                 <div class="col-md-2">
                   <label class="small fw-bold text-muted mb-1">เงินฝากประจำเดือน</label>
                   <input type="month" class="form-control" id="sv_note">
@@ -3028,12 +3032,12 @@
             }
         }
         
-        let actionButtons = '<button class="btn btn-xs btn-warning px-2 py-1 small btn-sm me-1" onclick="editSaving(\'' + t.id + '\',\'' + t.date + '\',' + t.amount + ',\'' + (t.note || '') + '\', \'' + (t.bank || '') + '\')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>' +
+        let actionButtons = '<button class="btn btn-xs btn-warning px-2 py-1 small btn-sm me-1" onclick="editSaving(\'' + t.id + '\',\'' + t.date + '\',' + t.amount + ',\'' + (t.note || '') + '\', \'' + (t.bank || '') + '\', \'' + (t.category || '') + '\')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>' +
           '<button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteSavingConfirm(\'' + t.id + '\')" title="ลบ"><i class="fa-solid fa-trash"></i></button>';
         html += '<tr>' +
                '<td><span class="badge bg-dark" style="font-size:0.75rem;">' + t.id + '</span></td>' +
                '<td>' + t.date + '</td>' +
-               '<td><span class="badge border border-primary text-primary">' + (t.bank || '-') + '</span></td>' +
+               '<td><span class="badge border border-primary text-primary">' + (t.bank || '-') + '</span>' + (t.category && t.category.includes(' - ') ? '<br><small class="text-muted">' + t.category.split(' - ')[1] + '</small>' : '') + '</td>' +
                '<td class="text-start fw-medium text-muted">' + displayMonth + '</td>' +
                '<td class="fw-bold text-success">\u0e3f' + Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>' +
                '<td>' + actionButtons + '</td>' +
@@ -3083,10 +3087,11 @@
     async function submitSaving(e) {
       e.preventDefault();
       let id = document.getElementById('sv_id').value;
+      let acc = document.getElementById('sv_account') ? document.getElementById('sv_account').value : '';
       let txData = {
         date: document.getElementById('sv_date').value,
         type: 'เงินฝาก',
-        category: 'ฝากเงินออมทรัพย์',
+        category: acc ? 'ฝากเงินออมทรัพย์ - ' + acc : 'ฝากเงินออมทรัพย์',
         amount: Number(document.getElementById('sv_amount').value),
         bank: document.getElementById('sv_bank').value,
         note: document.getElementById('sv_note').value
@@ -3110,7 +3115,7 @@
       }
     }
 
-    function editSaving(id, dateStr, amount, note, bank) {
+    function editSaving(id, dateStr, amount, note, bank, category) {
       document.getElementById('sv_id').value = id;
       var parts = dateStr.split('/');
       if (parts.length === 3) {
@@ -3121,6 +3126,9 @@
       if(document.getElementById('sv_bank')) {
           document.getElementById('sv_bank').value = bank || '';
       }
+      if(document.getElementById('sv_account')) {
+          document.getElementById('sv_account').value = (category && category.includes(' - ')) ? category.split(' - ')[1] : '';
+      }
       document.getElementById('btnSaveSaving').className = "btn btn-primary fw-bold text-white";
       document.getElementById('btnSaveSaving').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการฝาก';
       document.getElementById('btnCancelSavingEdit').classList.remove('d-none');
@@ -3130,6 +3138,7 @@
     function resetSavingForm() {
       document.getElementById('savingsForm').reset();
       document.getElementById('sv_id').value = '';
+      if(document.getElementById('sv_account')) document.getElementById('sv_account').value = '';
       document.getElementById('sv_date').value = new Date().toISOString().split('T')[0];
       document.getElementById('btnSaveSaving').className = "btn btn-warning fw-bold text-dark";
       document.getElementById('btnSaveSaving').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกเงินฝาก';
