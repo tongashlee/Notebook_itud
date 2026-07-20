@@ -1665,7 +1665,7 @@
 
       // คำนวณยอดค้างชำระ COD และมัดจำ
       let codPending = 0, depositPending = 0;
-      globalSales.forEach(s => {
+            globalSales.forEach(s => {
         if (s.status === 'PENDING_COD') codPending += Number(s.depositRemaining);
         if (s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0) depositPending += Number(s.depositRemaining);
       });
@@ -2191,6 +2191,9 @@
               <td class="text-start">${s.productName}</td>
               <td>${s.qty}</td>
               <td class="text-primary fw-bold">฿${Number(s.totalSales).toLocaleString()}</td>
+              
+              <td class="text-danger">-฿${Number(s.qty > 0 ? (s.totalCost / s.qty) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+              <td class="text-success fw-bold">฿${Number(s.qty > 0 ? (s.profit / s.qty) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
               <td>${s.shippingCost > 0 ? `<span class="text-danger">-฿${s.shippingCost.toLocaleString()}</span>` : "-"}</td>
               <td>${depositCol}</td>
               <td>${remainCol}</td>
