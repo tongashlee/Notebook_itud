@@ -1,0 +1,65 @@
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.id.localeCompare(b.id);
+      });
+
+      sortedTx.forEach(t => {
+        let parts = t.date.split('/');
+        let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+        if (filter && tMonth !== targetMonth) return;
+
+        let inc = t.type === 'รายรับ' ? Number(t.amount) : 0;
+        let exp = t.type === 'รายจ่าย' ? Number(t.amount) : 0;
+
+        totalIncome += inc;
+        totalExpense += exp;
+
+        html += `<tr>
+             <td>${count++}</td>
+             <td>${t.date}</td>
+             <td class="text-start">${t.category} ${t.note ? ' <small class="text-muted">(' + t.note + ')</small>' : ''}</td>
+             <td class="${inc > 0 ? 'text-success' : ''}">${inc > 0 ? inc.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+             <td class="${exp > 0 ? 'text-danger' : ''}">${exp > 0 ? exp.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+          </tr>`;
+      });
+
+      if (html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
+
+      document.getElementById('txPrintBody').innerHTML = html;
+      document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('txPrintTotalExpense').innerText = totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+      let balance = totalIncome - totalExpense;
+      let balElem = document.getElementById('txPrintBalance');
+      balElem.innerText = balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      balElem.className = balance >= 0 ? 'text-primary' : 'text-danger';
+
+      document.getElementById('printTxReportSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
+    }
+
+    async function submitTransaction(e) {
+      e.preventDefault();
+      let id = document.getElementById('tx_id').value;
+      let txData = {
+        date: document.getElementById('tx_date').value,
+        type: document.getElementById('tx_type').value,
+        category: document.getElementById('tx_category').value,
+        amount: Number(document.getElementById('tx_amount').value),
+        note: document.getElementById('tx_note').value
+      };
+
+      Swal.showLoading();
+      try {
+        if (id) {
+          let exists = globalTransactions.find(t => t.id === id);
+          if (exists) {
+            // Update
+            const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+            if (error) throw error;
+          } else {
+            // Insert Override
+            txData.tx_id = id;
+            const { error } = await supabaseClient.from('transactions').insert([txData]);
+            if (error) throw error;
+          }

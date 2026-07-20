@@ -1,0 +1,390 @@
+Created At: 2026-07-20T03:30:05Z
+Completed At: 2026-07-20T03:30:05Z
+File Path: `file:///c:/Users/Dimondz/Documents/notebookitud/index.html`
+Total Lines: 3253
+Total Bytes: 180263
+Showing lines 2880 to 2950
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2880: 
+2881:           let actionButtons = `
+2882:             <button class="btn btn-xs btn-outline-secondary px-2 py-1 small btn-sm me-1" onclick="printTxDetail('${t.id}')" title="พิมพ์รายการ"><i class="fa-solid fa-print"></i></button>
+2883:             <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
+2884:             <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
+2885:           `;
+2886:           if (t.source !== 'manual') {
+2887:             actionButtons += ` <span class="badge bg-secondary small ms-1">Auto</span>`;
+2888:           }
+2889: 
+2890:           html += `<tr>
+2891:                  <td><span class="badge bg-dark" style="font-size:0.75rem;">${t.id}</span></td>
+2892:                  <td>${t.date}</td>
+2893:                  <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
+2894:                  <td class="text-start fw-medium">${t.category}</td>
+2895:                  <td class="fw-bold">฿${fmtMoney(t.amount)}</td>
+2896:                  <td class="text-start text-muted" style="font-size:0.85rem;">${t.note || '-'}</td>
+2897:                  <td>${actionButtons}</td>
+2898:               </tr>`;
+2899:         }
+2900:       });
+2901:       document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
+2902: 
+2903:       if (document.getElementById('txSumIncome')) {
+2904:          document.getElementById('txSumIncome').innerText = '฿' + sumIncome.toLocaleString();
+2905:          document.getElementById('txSumExpense').innerText = '฿' + sumExpense.toLocaleString();
+2906:          let balance = sumIncome - sumExpense;
+2907:          let balEl = document.getElementById('txSumBalance');
+2908:          balEl.innerText = '฿' + balance.toLocaleString();
+2909:          if (balance >= 0) {
+2910:             balEl.classList.remove('text-danger');
+2911:             balEl.classList.add('text-primary');
+2912:          } else {
+2913:             balEl.classList.remove('text-primary');
+2914:             balEl.classList.add('text-danger');
+2915:          }
+2916: 
+2917:          if (document.getElementById('txSumIncomeOther')) {
+2918:            document.getElementById('txSumIncomeOther').innerText = '฿' + sumIncomeOther.toLocaleString();
+2919:            document.getElementById('txSumExpenseOther').innerText = '฿' + sumExpenseOther.toLocaleString();
+2920:            let balanceOther = sumIncomeOther - sumExpenseOther;
+2921:            let balOtherEl = document.getElementById('txSumBalanceOther');
+2922:            balOtherEl.innerText = '฿' + balanceOther.toLocaleString();
+2923:            if (balanceOther >= 0) {
+2924:               balOtherEl.classList.remove('text-danger');
+2925:               balOtherEl.classList.add('text-secondary');
+2926:            } else {
+2927:               balOtherEl.classList.remove('text-secondary');
+2928:               balOtherEl.classList.add('text-danger');
+2929:            }
+2930:          }
+2931:       }
+2932:     }
+2933: 
+2934:     function printTxReport() {
+2935:       let filter = document.getElementById('monthFilter').value;
+2936:       let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
+2937: 
+2938:       document.getElementById('txPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
+2939: 
+2940:       let html = '';
+2941:       let totalIncome = 0;
+2942:       let totalExpense = 0;
+2943:       let count = 1;
+2944: 
+2945:       let allTx = getAllTransactions();
+2946:       // พิมพ์เรียงตามเวลาเก่าไปใหม่
+2947:       let sortedTx = allTx.sort((a, b) => {
+2948:         let dateA = a.date.split('/').reverse().join('');
+2949:         let dateB = b.date.split('/').reverse().join('');
+2950:         if (dateA !== dateB) return dateA.localeCompare(dateB);
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+        return a.id.localeCompare(b.id);
+      });
+
+      sortedTx.forEach(t => {
+        let parts = t.date.split('/');
+        let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+        if (filter && tMonth !== targetMonth) return;
+
+        let inc = t.type === 'รายรับ' ? Number(t.amount) : 0;
+        let exp = t.type === 'รายจ่าย' ? Number(t.amount) : 0;
+
+        totalIncome += inc;
+        totalExpense += exp;
+
+        html += `<tr>
+             <td>${count++}</td>
+             <td>${t.date}</td>
+             <td class="text-start">${t.category} ${t.note ? ' <small class="text-muted">(' + t.note + ')</small>' : ''}</td>
+             <td class="${inc > 0 ? 'text-success' : ''}">${inc > 0 ? inc.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+             <td class="${exp > 0 ? 'text-danger' : ''}">${exp > 0 ? exp.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+          </tr>`;
+      });
+
+      if (html === '') html = '<tr><td colspan="5" class="text-muted text-center py-4">ไม่มีประวัติข้อมูลในงวดเดือนที่เลือก</td></tr>';
+
+      document.getElementById('txPrintBody').innerHTML = html;
+      document.getElementById('txPrintTotalIncome').innerText = totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('txPrintTotalExpense').innerText = totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+      let balance = totalIncome - totalExpense;
+      let balElem = document.getElementById('txPrintBalance');
+      balElem.innerText = balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      balElem.className = balance >= 0 ? 'text-primary' : 'text-danger';
+
+      document.getElementById('printTxReportSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
+    }
+
+    async function submitTransaction(e) {
+      e.preventDefault();
+      let id = document.getElementById('tx_id').value;
+      let txData = {
+        date: document.getElementById('tx_date').value,
+        type: document.getElementById('tx_type').value,
+        category: document.getElementById('tx_category').value,
+        amount: Number(document.getElementById('tx_amount').value),
+        note: document.getElementById('tx_note').value
+      };
+
+      Swal.showLoading();
+      try {
+        if (id) {
+          let exists = globalTransactions.find(t => t.id === id);
+          if (exists) {
+            // Update
+            const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+            if (error) throw error;
+  
+          }
+Created At: 2026-07-20T03:20:01Z
+Completed At: 2026-07-20T03:20:01Z
+File Path: `file:///c:/Users/Dimondz/Documents/notebookitud/index.html`
+Total Lines: 3231
+Total Bytes: 179272
+Showing lines 3000 to 3144
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3000:           }
+3001:         } else {
+3002:           // Insert
+3003:           txData.tx_id = "TX-" + Date.now();
+3004:           const { error } = await supabaseClient.from('transactions').insert([txData]);
+3005:           if (error) throw error;
+3006:         }
+3007:         Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
+3008:         resetTxForm();
+3009:         refreshAllData();
+3010:       } catch (error) {
+3011:         console.error(error);
+3012:         Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+3013:       }
+3014:     }
+3015: 
+3016:     function editTransaction(id, date, type, category, amount, note) {
+3017:       document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> แก้ไขข้อมูลรายการบัญชี (รหัส: ${id})`;
+3018:       document.getElementById('tx_id').value = id;
+3019: 
+3020:       let parts = date.split('/');
+3021:       if (parts.length === 3) document.getElementById('tx_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+3022: 
+3023:       document.getElementById('tx_type').value = type;
+3024:       
+3025:       // ตรวจสอบว่า category อยู่ใน dropdown หรือไม่
+3026:       let selectEl = document.getElementById('tx_category');
+3027:       let optionFound = false;
+3028:       for (let i = 0; i < selectEl.options.length; i++) {
+3029:         if (selectEl.options[i].value === category) {
+3030:           optionFound = true;
+3031:           break;
+3032:         }
+3033:       }
+3034:       if (optionFound) {
+3035:         selectEl.value = category;
+3036:         document.getElementById('tx_category_custom').style.display = 'none';
+3037:       } else {
+3038:         selectEl.value = 'อื่นๆ';
+3039:         document.getElementById('tx_category_custom').style.display = 'block';
+3040:         document.getElementById('tx_category_custom').value = category;
+3041:         document.getElementById('tx_category_custom').required = true;
+3042:       }
+3043:       
+3044:       document.getElementById('tx_amount').value = amount;
+3045:       document.getElementById('tx_note').value = note;
+3046: 
+3047:       document.getElementById('btnSaveTx').className = "btn btn-warning w-100 fw-bold";
+3048:       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการแถวข้อมูล';
+3049:       document.getElementById('btnCancelTxEdit').classList.remove('d-none');
+3050:       document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+3051:     }
+3052: 
+3053:     function resetTxForm() {
+3054:       document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
+3055:       document.getElementById('txForm').reset();
+3056:       document.getElementById('tx_id').value = '';
+3057:       document.getElementById('tx_category_custom').style.display = 'none';
+3058:       document.getElementById('tx_category_custom').value = '';
+3059:       document.getElementById('tx_category_custom').required = false;
+3060:       document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
+3061:       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
+3062:       document.getElementById('btnCancelTxEdit').classList.add('d-none');
+3063:     }
+3064: 
+3065:     function deleteTxConfirm(id) {
+3066:       Swal.fire({
+3067:         title: 'ยืนยันลบข้อมูล?',
+3068:         text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
+3069:         icon: 'warning',
+3070:         showCancelButton: true,
+3071:         confirmButtonColor: '#ef4444',
+3072:         cancelButtonColor: '#64748b',
+3073:         confirmButtonText: 'ยืนยันลบ',
+3074:         cancelButtonText: 'ยกเลิก'
+3075:       }).then(async (result) => {
+3076:         if (result.isConfirmed) {
+3077:           Swal.showLoading();
+3078:           try {
+3079:             let isAuto = id.startsWith('INV-') || id.startsWith('IMP-');
+3080:             if (isAuto) {
+3081:               let exists = globalTransactions.find(t => t.id === id);
+3082:               let txData = { tx_id: id, type: 'รายรับ', date: new Date().toISOString().split('T')[0], category: 'ลบรายการ (ซ่อน)', amount: 0, note: 'DELETED_AUTO' };
+3083:               if (exists) {
+3084:                 const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+3085:                 if (error) throw error;
+3086:               } else {
+3087:                 const { error } = await supabaseClient.from('transactions').insert([txData]);
+3088:                 if (error) throw error;
+3089:               }
+3090:             } else {
+3091:               const { error } = await supabaseClient.from('transactions').delete().eq('tx_id', id);
+3092:               if (error) throw error;
+3093:             }
+3094:             Swal.fire('ลบรายการสำเร็จ', '', 'success');
+3095:             refreshAllData();
+3096:           } catch (error) {
+3097:             console.error(error);
+3098:             Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
+3099:           }
+3100:         }
+3101:       });
+3102:     }
+3103: 
+3104:     async function submitProduct(e) {
+3105:       e.preventDefault();
+3106:       let id = document.getElementById('p_id').value;
+3107:       let prodData = {
+3108:         updated_at: new Date(document.getElementById('p_date').value).toISOString(),
+3109:         name: document.getElementById('p_name').value,
+3110:         brand: document.getElementById('p_brand').value,
+3111:         cost: Number(document.getElementById('p_cost').value),
+3112:         actual_price: Number(document.getElementById('p_actualPrice').value),
+3113:         stock: Number(document.getElementById('p_stock').value),
+3114:         fb_link: document.getElementById('p_fbLink').value || null,
+3115:         serial_number: document.getElementById('p_serialNumber').value || null,
+3116:         cpu: document.getElementById('p_cpu').value || null,
+3117:         ram: document.getElementById('p_ram').value || null,
+3118:         gpu: document.getElementById('p_gpu').value || null,
+3119:         screen_size: document.getElementById('p_screenSize').value || null,
+3120:         color: document.getElementById('p_color').value || null,
+3121:         warranty: document.getElementById('p_warranty').value || null
+3122:       };
+3123: 
+3124:       Swal.showLoading();
+3125:       try {
+3126:         if (id) {
+3127:           const { error } = await supabaseClient.from('products').update(prodData).eq('id', id);
+3128:           if (error) throw error;
+3129:         } else {
+3130:           prodData.id = "PROD-" + Date.now();
+3131:           const { error } = await supabaseClient.from('products').insert([prodData]);
+3132:           if (error) throw error;
+3133: 
+3134:           sendLineNotification(`📦 [รายการซื้อเข้าใหม่]\nสินค้า: ${prodData.name}\nแบรนด์: ${prodData.brand}\nจำนวน: ${prodData.stock} เครื่อง\nต้นทุน/เครื่อง: ฿${fmtMoney(prodData.cost)}\nรวม: ฿${fmtMoney(prodData.cost * prodData.stock)}`);
+3135:         }
+3136:         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
+3137:         resetProductForm();
+3138:         refreshAllData();
+3139:       } catch (error) {
+3140:         console.error(error);
+3141:         Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+3142:       }
+3143:     }
+3144: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+Created At: 2026-07-20T03:20:14Z
+Completed At: 2026-07-20T03:20:14Z
+File Path: `file:///c:/Users/Dimondz/Documents/notebookitud/index.html`
+Total Lines: 3231
+Total Bytes: 179272
+Showing lines 3144 to 3231
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3144: 
+3145:     function editProduct(productId) {
+3146:       let p = globalProducts.find(x => String(x.id) === String(productId));
+3147:       if (!p) return;
+3148:       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + p.id + ")";
+3149:       document.getElementById('p_id').value = p.id;
+3150:       
+3151:       let date = p.updatedAt;
+3152:       if (date && date.includes('T')) {
+3153:         document.getElementById('p_date').value = date.split('T')[0];
+3154:       } else if (date && date.includes('/')) {
+3155:         let parts = date.split('/');
+3156:         if (parts.length === 3) document.getElementById('p_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+3157:       } else if (date) {
+3158:         document.getElementById('p_date').value = date;
+3159:       }
+3160:       document.getElementById('p_name').value = p.name;
+3161:       document.getElementById('p_brand').value = p.brand;
+3162:       document.getElementById('p_cost').value = p.cost;
+3163:       document.getElementById('p_actualPrice').value = p.actualPrice;
+3164:       document.getElementById('p_stock').value = p.stock;
+3165:       document.getElementById('p_fbLink').value = p.fbLink && p.fbLink !== 'undefined' ? p.fbLink : "";
+3166:       
+3167:       document.getElementById('p_serialNumber').value = p.serialNumber || "";
+3168:       document.getElementById('p_cpu').value = p.cpu || "";
+3169:       document.getElementById('p_ram').value = p.ram || "";
+3170:       document.getElementById('p_gpu').value = p.gpu || "";
+3171:       document.getElementById('p_screenSize').value = p.screenSize || "";
+3172:       document.getElementById('p_color').value = p.color || "";
+3173:       document.getElementById('p_warranty').value = p.warranty || "";
+3174: 
+3175:       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
+3176:       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
+3177:       document.getElementById('btnCancelEdit').classList.remove('d-none');
+3178:     }
+3179: 
+3180:     async function deleteProduct(productId) {
+3181:       const { isConfirmed } = await Swal.fire({
+3182:         title: 'ลบข้อมูลสินค้านี้?',
+3183:         html: `<div class="text-danger fw-bold">ระบบจะลบข้อมูลสินค้านี้ออกจากคลังอย่างถาวร</div>`,
+3184:         icon: 'warning',
+3185:         showCancelButton: true,
+3186:         confirmButtonColor: '#dc3545',
+3187:         confirmButtonText: 'ใช่, ลบเลย',
+3188:         cancelButtonText: 'ยกเลิก'
+3189:       });
+3190:       if (!isConfirmed) return;
+3191:       
+3192:       Swal.showLoading();
+3193:       try {
+3194:         const { error: deleteErr } = await supabaseClient.from('products')
+3195:           .delete()
+3196:           .eq('id', productId);
+3197:         if (deleteErr) throw deleteErr;
+3198:         
+3199:         Swal.fire('ลบเรียบร้อย!', 'ลบสินค้าออกจากคลังแล้ว', 'success');
+3200:         refreshAllData();
+3201:       } catch (err) {
+3202:         console.error(err);
+3203:         Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบข้อมูลสินค้าได้', 'error');
+3204:       }
+3205:     }
+3206: 
+3207:     function resetProductForm() {
+3208:       document.getElementById('productPageTitle').innerText = "จัดการข้อมูลสินค้าในคลัง / นำเข้าสต็อก";
+3209:       document.getElementById('formProduct').reset();
+3210:       document.getElementById('p_id').value = '';
+3211:       let today = new Date().toISOString().split('T')[0];
+3212:       document.getElementById('p_date').value = today;
+3213:       document.getElementById('btnSaveProduct').className = "btn btn-custom-orange w-100";
+3214:       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+3215:       document.getElementById('btnCancelEdit').classList.add('d-none');
+3216:     }
+3217: 
+3218:     window.onload = function () {
+3219:       let today = new Date().toISOString().split('T')[0];
+3220:       document.getElementById('p_date').value = today;
+3221:       document.getElementById('saleDate').value = today;
+3222:       document.getElementById('tx_date').value = today;
+3223: 
+3224:       // เริ่มดึงข้อมูลเมื่อโหลดหน้าเว็บ
+3225:       refreshAllData();
+3226:     };
+3227:   </script>
+3228:   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+3229: </body>
+3230: 
+3231: </html>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

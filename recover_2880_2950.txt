@@ -1,0 +1,79 @@
+Created At: 2026-07-20T03:30:05Z
+Completed At: 2026-07-20T03:30:05Z
+File Path: `file:///c:/Users/Dimondz/Documents/notebookitud/index.html`
+Total Lines: 3253
+Total Bytes: 180263
+Showing lines 2880 to 2950
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2880: 
+2881:           let actionButtons = `
+2882:             <button class="btn btn-xs btn-outline-secondary px-2 py-1 small btn-sm me-1" onclick="printTxDetail('${t.id}')" title="พิมพ์รายการ"><i class="fa-solid fa-print"></i></button>
+2883:             <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
+2884:             <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
+2885:           `;
+2886:           if (t.source !== 'manual') {
+2887:             actionButtons += ` <span class="badge bg-secondary small ms-1">Auto</span>`;
+2888:           }
+2889: 
+2890:           html += `<tr>
+2891:                  <td><span class="badge bg-dark" style="font-size:0.75rem;">${t.id}</span></td>
+2892:                  <td>${t.date}</td>
+2893:                  <td><span class="badge ${t.type === 'รายรับ' ? 'bg-success' : 'bg-danger'}">${t.type}</span></td>
+2894:                  <td class="text-start fw-medium">${t.category}</td>
+2895:                  <td class="fw-bold">฿${fmtMoney(t.amount)}</td>
+2896:                  <td class="text-start text-muted" style="font-size:0.85rem;">${t.note || '-'}</td>
+2897:                  <td>${actionButtons}</td>
+2898:               </tr>`;
+2899:         }
+2900:       });
+2901:       document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
+2902: 
+2903:       if (document.getElementById('txSumIncome')) {
+2904:          document.getElementById('txSumIncome').innerText = '฿' + sumIncome.toLocaleString();
+2905:          document.getElementById('txSumExpense').innerText = '฿' + sumExpense.toLocaleString();
+2906:          let balance = sumIncome - sumExpense;
+2907:          let balEl = document.getElementById('txSumBalance');
+2908:          balEl.innerText = '฿' + balance.toLocaleString();
+2909:          if (balance >= 0) {
+2910:             balEl.classList.remove('text-danger');
+2911:             balEl.classList.add('text-primary');
+2912:          } else {
+2913:             balEl.classList.remove('text-primary');
+2914:             balEl.classList.add('text-danger');
+2915:          }
+2916: 
+2917:          if (document.getElementById('txSumIncomeOther')) {
+2918:            document.getElementById('txSumIncomeOther').innerText = '฿' + sumIncomeOther.toLocaleString();
+2919:            document.getElementById('txSumExpenseOther').innerText = '฿' + sumExpenseOther.toLocaleString();
+2920:            let balanceOther = sumIncomeOther - sumExpenseOther;
+2921:            let balOtherEl = document.getElementById('txSumBalanceOther');
+2922:            balOtherEl.innerText = '฿' + balanceOther.toLocaleString();
+2923:            if (balanceOther >= 0) {
+2924:               balOtherEl.classList.remove('text-danger');
+2925:               balOtherEl.classList.add('text-secondary');
+2926:            } else {
+2927:               balOtherEl.classList.remove('text-secondary');
+2928:               balOtherEl.classList.add('text-danger');
+2929:            }
+2930:          }
+2931:       }
+2932:     }
+2933: 
+2934:     function printTxReport() {
+2935:       let filter = document.getElementById('monthFilter').value;
+2936:       let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
+2937: 
+2938:       document.getElementById('txPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
+2939: 
+2940:       let html = '';
+2941:       let totalIncome = 0;
+2942:       let totalExpense = 0;
+2943:       let count = 1;
+2944: 
+2945:       let allTx = getAllTransactions();
+2946:       // พิมพ์เรียงตามเวลาเก่าไปใหม่
+2947:       let sortedTx = allTx.sort((a, b) => {
+2948:         let dateA = a.date.split('/').reverse().join('');
+2949:         let dateB = b.date.split('/').reverse().join('');
+2950:         if (dateA !== dateB) return dateA.localeCompare(dateB);
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

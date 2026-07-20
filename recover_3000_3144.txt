@@ -1,0 +1,153 @@
+Created At: 2026-07-20T03:20:01Z
+Completed At: 2026-07-20T03:20:01Z
+File Path: `file:///c:/Users/Dimondz/Documents/notebookitud/index.html`
+Total Lines: 3231
+Total Bytes: 179272
+Showing lines 3000 to 3144
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3000:           }
+3001:         } else {
+3002:           // Insert
+3003:           txData.tx_id = "TX-" + Date.now();
+3004:           const { error } = await supabaseClient.from('transactions').insert([txData]);
+3005:           if (error) throw error;
+3006:         }
+3007:         Swal.fire('สำเร็จ', 'บันทึกข้อมูลบัญชีเรียบร้อย', 'success');
+3008:         resetTxForm();
+3009:         refreshAllData();
+3010:       } catch (error) {
+3011:         console.error(error);
+3012:         Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+3013:       }
+3014:     }
+3015: 
+3016:     function editTransaction(id, date, type, category, amount, note) {
+3017:       document.getElementById('txFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-warning"></i> แก้ไขข้อมูลรายการบัญชี (รหัส: ${id})`;
+3018:       document.getElementById('tx_id').value = id;
+3019: 
+3020:       let parts = date.split('/');
+3021:       if (parts.length === 3) document.getElementById('tx_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+3022: 
+3023:       document.getElementById('tx_type').value = type;
+3024:       
+3025:       // ตรวจสอบว่า category อยู่ใน dropdown หรือไม่
+3026:       let selectEl = document.getElementById('tx_category');
+3027:       let optionFound = false;
+3028:       for (let i = 0; i < selectEl.options.length; i++) {
+3029:         if (selectEl.options[i].value === category) {
+3030:           optionFound = true;
+3031:           break;
+3032:         }
+3033:       }
+3034:       if (optionFound) {
+3035:         selectEl.value = category;
+3036:         document.getElementById('tx_category_custom').style.display = 'none';
+3037:       } else {
+3038:         selectEl.value = 'อื่นๆ';
+3039:         document.getElementById('tx_category_custom').style.display = 'block';
+3040:         document.getElementById('tx_category_custom').value = category;
+3041:         document.getElementById('tx_category_custom').required = true;
+3042:       }
+3043:       
+3044:       document.getElementById('tx_amount').value = amount;
+3045:       document.getElementById('tx_note').value = note;
+3046: 
+3047:       document.getElementById('btnSaveTx').className = "btn btn-warning w-100 fw-bold";
+3048:       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการแถวข้อมูล';
+3049:       document.getElementById('btnCancelTxEdit').classList.remove('d-none');
+3050:       document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+3051:     }
+3052: 
+3053:     function resetTxForm() {
+3054:       document.getElementById('txFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-primary"></i> เพิ่มรายการบัญชีรายรับ/รายจ่าย';
+3055:       document.getElementById('txForm').reset();
+3056:       document.getElementById('tx_id').value = '';
+3057:       document.getElementById('tx_category_custom').style.display = 'none';
+3058:       document.getElementById('tx_category_custom').value = '';
+3059:       document.getElementById('tx_category_custom').required = false;
+3060:       document.getElementById('btnSaveTx').className = "btn btn-primary w-100 fw-bold";
+3061:       document.getElementById('btnSaveTx').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลบัญชี';
+3062:       document.getElementById('btnCancelTxEdit').classList.add('d-none');
+3063:     }
+3064: 
+3065:     function deleteTxConfirm(id) {
+3066:       Swal.fire({
+3067:         title: 'ยืนยันลบข้อมูล?',
+3068:         text: "คุณต้องการลบรายการรายรับ-รายจ่ายรหัส " + id + " นี้ใช่หรือไม่!",
+3069:         icon: 'warning',
+3070:         showCancelButton: true,
+3071:         confirmButtonColor: '#ef4444',
+3072:         cancelButtonColor: '#64748b',
+3073:         confirmButtonText: 'ยืนยันลบ',
+3074:         cancelButtonText: 'ยกเลิก'
+3075:       }).then(async (result) => {
+3076:         if (result.isConfirmed) {
+3077:           Swal.showLoading();
+3078:           try {
+3079:             let isAuto = id.startsWith('INV-') || id.startsWith('IMP-');
+3080:             if (isAuto) {
+3081:               let exists = globalTransactions.find(t => t.id === id);
+3082:               let txData = { tx_id: id, type: 'รายรับ', date: new Date().toISOString().split('T')[0], category: 'ลบรายการ (ซ่อน)', amount: 0, note: 'DELETED_AUTO' };
+3083:               if (exists) {
+3084:                 const { error } = await supabaseClient.from('transactions').update(txData).eq('tx_id', id);
+3085:                 if (error) throw error;
+3086:               } else {
+3087:                 const { error } = await supabaseClient.from('transactions').insert([txData]);
+3088:                 if (error) throw error;
+3089:               }
+3090:             } else {
+3091:               const { error } = await supabaseClient.from('transactions').delete().eq('tx_id', id);
+3092:               if (error) throw error;
+3093:             }
+3094:             Swal.fire('ลบรายการสำเร็จ', '', 'success');
+3095:             refreshAllData();
+3096:           } catch (error) {
+3097:             console.error(error);
+3098:             Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
+3099:           }
+3100:         }
+3101:       });
+3102:     }
+3103: 
+3104:     async function submitProduct(e) {
+3105:       e.preventDefault();
+3106:       let id = document.getElementById('p_id').value;
+3107:       let prodData = {
+3108:         updated_at: new Date(document.getElementById('p_date').value).toISOString(),
+3109:         name: document.getElementById('p_name').value,
+3110:         brand: document.getElementById('p_brand').value,
+3111:         cost: Number(document.getElementById('p_cost').value),
+3112:         actual_price: Number(document.getElementById('p_actualPrice').value),
+3113:         stock: Number(document.getElementById('p_stock').value),
+3114:         fb_link: document.getElementById('p_fbLink').value || null,
+3115:         serial_number: document.getElementById('p_serialNumber').value || null,
+3116:         cpu: document.getElementById('p_cpu').value || null,
+3117:         ram: document.getElementById('p_ram').value || null,
+3118:         gpu: document.getElementById('p_gpu').value || null,
+3119:         screen_size: document.getElementById('p_screenSize').value || null,
+3120:         color: document.getElementById('p_color').value || null,
+3121:         warranty: document.getElementById('p_warranty').value || null
+3122:       };
+3123: 
+3124:       Swal.showLoading();
+3125:       try {
+3126:         if (id) {
+3127:           const { error } = await supabaseClient.from('products').update(prodData).eq('id', id);
+3128:           if (error) throw error;
+3129:         } else {
+3130:           prodData.id = "PROD-" + Date.now();
+3131:           const { error } = await supabaseClient.from('products').insert([prodData]);
+3132:           if (error) throw error;
+3133: 
+3134:           sendLineNotification(`📦 [รายการซื้อเข้าใหม่]\nสินค้า: ${prodData.name}\nแบรนด์: ${prodData.brand}\nจำนวน: ${prodData.stock} เครื่อง\nต้นทุน/เครื่อง: ฿${fmtMoney(prodData.cost)}\nรวม: ฿${fmtMoney(prodData.cost * prodData.stock)}`);
+3135:         }
+3136:         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
+3137:         resetProductForm();
+3138:         refreshAllData();
+3139:       } catch (error) {
+3140:         console.error(error);
+3141:         Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+3142:       }
+3143:     }
+3144: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
