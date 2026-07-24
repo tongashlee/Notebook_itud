@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 
 <head>
@@ -546,13 +546,18 @@
           <form id="formProduct" onsubmit="submitProduct(event)">
             <input type="hidden" id="p_id">
             <div class="row g-3 mb-3">
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1"><i class="fa-solid fa-hashtag text-info me-1"></i>เลขที่ซื้อเข้า</label><input type="text"
+                  class="form-control" id="p_purchaseNo" placeholder="Auto (PO-xxxx) หรือกรอกเอง"></div>
+              <div class="col-md-3"><label class="small fw-bold text-muted mb-1"><i class="fa-solid fa-user-tag text-success me-1"></i>ซื้อจาก (ชื่อผู้ขาย)</label><input type="text"
+                  class="form-control" id="p_supplier" placeholder="เช่น ร้าน ABC, คุณสมชาย"></div>
+
               <div class="col-md-3"><label class="small fw-bold text-muted mb-1">วันที่อัปเดต</label><input type="date"
                   class="form-control" id="p_date" required></div>
               <div class="col-md-4"><label class="small fw-bold text-muted mb-1">ชื่อสินค้า/รุ่นโน๊ตบุ๊ค</label><input
                   type="text" class="form-control" id="p_name" required></div>
               <div class="col-md-3">
                 <label class="small fw-bold text-muted mb-1">ยี่ห้อ</label>
-                <select class="form-select" id="p_brand" required>
+                <select class="form-select" id="p_brand" required onchange="updatePurchaseNoBrand()">
                   <option value="">-- เลือกยี่ห้อ --</option>
                   <option value="ASUS">ASUS</option>
                   <option value="Acer">Acer</option>
@@ -616,8 +621,10 @@
           <table class="table table-hover align-middle text-center">
             <thead class="table-light">
               <tr>
+                <th>เลขที่ซื้อเข้า</th>
                 <th>วันที่ลงรายการ</th>
                 <th>ชื่อสินค้า</th>
+                <th>ซื้อจาก</th>
                 <th>ยี่ห้อ</th>
                 <th>ทุน</th>
                 <th>ขาย</th>
@@ -1002,6 +1009,10 @@
                   </select>
                 </div>
                 <div class="col-md-3">
+                  <label class="small fw-bold text-muted mb-1"><i class="fa-solid fa-credit-card text-info me-1"></i>เลขบัญชี</label>
+                  <input type="text" class="form-control" id="sv_accountNo" placeholder="เช่น 123-4-56789-0">
+                </div>
+                <div class="col-md-3">
                   <label class="small fw-bold text-muted mb-1">ชื่อบัญชี / สาขา (ถ้ามี)</label>
                   <input type="text" class="form-control" id="sv_account" placeholder="เช่น บัญชีลูก, สาขาสยาม">
                 </div>
@@ -1027,7 +1038,7 @@
                 <tr>
                   <th>รหัสอ้างอิง</th>
                   <th>วันที่ฝาก</th>
-                  <th>ธนาคาร</th><th>ธนาคาร</th>
+                  <th>ธนาคาร</th><th>เลขบัญชี</th>
                   <th class="text-start">เงินฝากประจำเดือน</th>
                   <th class="text-success">จำนวนเงินฝาก</th>
                   <th>จัดการ</th>
@@ -1462,11 +1473,30 @@
     </div>
   </div>
 
-  <script src="config.js"></script>
+  <script src="config.js?v=${new Date().getTime()}"></script>
   <script>
     let globalProducts = [], globalSales = [], globalTransactions = [];
     let mySalesChart = null;
     let myProfitChart = null;
+
+    // ====== ฟังก์ชันแจ้งเตือนผ่าน LINE ======
+    async function sendLineNotify(message) {
+      if (typeof LINE_WEBHOOK_URL === 'undefined' || !LINE_WEBHOOK_URL) {
+        console.warn('LINE_WEBHOOK_URL ไม่ได้ตั้งค่า - ข้ามการแจ้งเตือน LINE');
+        return;
+      }
+      try {
+        await fetch(LINE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message }),
+          mode: 'no-cors'
+        });
+        console.log('LINE Notify sent successfully');
+      } catch (err) {
+        console.error('LINE Notify error:', err);
+      }
+    }
 
     // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY (สำหรับแสดงผล)
     function formatDateToTH(dateString) {
@@ -1508,13 +1538,13 @@
     // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
     // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
     function mapProduct(p) {
-      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "" };
+      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "", purchaseNo: p.purchase_no || "", supplier: p.supplier || "" };
     }
     function mapSale(s) {
       return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED', completedDate: s.completed_date ? formatDateToTH(s.completed_date) : null };
     }
     function mapTransaction(t) {
-      return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note, bank: t.bank };
+      return { id: t.tx_id, date: formatDateToTH(t.date), type: t.type, category: t.category, amount: Number(t.amount), note: t.note, bank: t.bank, accountNo: t.account_no || "" };
     }
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
@@ -1710,9 +1740,27 @@
         mSalesData.push(monthlySales[mStr] || 0);
       }
 
-      // Data for Yearly Sales
-      let yearLabels = Object.keys(yearlySales).sort();
-      let ySalesData = yearLabels.map(y => yearlySales[y]);
+      // Data for 15-Days Sales
+      let dayLabels = [];
+      let dSalesData = [];
+      let today = new Date();
+      for (let i = 14; i >= 0; i--) {
+        let d = new Date();
+        d.setDate(today.getDate() - i);
+        let dd = ("0" + d.getDate()).slice(-2);
+        let mm = ("0" + (d.getMonth() + 1)).slice(-2);
+        let yyyy = d.getFullYear();
+        let dStr = dd + "/" + mm + "/" + yyyy;
+        let labelStr = dd + "/" + mm;
+        
+        let sum = 0;
+        globalSales.forEach(s => {
+          if (s.date === dStr) sum += Number(s.totalSales);
+        });
+        
+        dayLabels.push(labelStr);
+        dSalesData.push(sum);
+      }
 
       const ctxSales = document.getElementById('salesChart');
       const ctxProfit = document.getElementById('profitChart');
@@ -1732,8 +1780,8 @@
       myProfitChart = new Chart(ctxProfit, {
         type: 'line',
         data: {
-          labels: yearLabels,
-          datasets: [{ label: 'ยอดขายรายปี (บาท)', data: ySalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
+          labels: dayLabels,
+          datasets: [{ label: 'ยอดขายราย 15 วัน (บาท)', data: dSalesData, backgroundColor: 'rgba(34, 197, 94, 0.2)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, fill: true, tension: 0.3 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       });
@@ -1816,17 +1864,30 @@
       let totalValue = 0;
 
       if (inStockProducts.length === 0) {
-         html = '<tr><td colspan="5" class="text-muted">ไม่มีสินค้าคงเหลือในระบบ</td></tr>';
+         html = '<tr><td colspan="6" class="text-muted">ไม่มีสินค้าคงเหลือในระบบ</td></tr>';
          document.getElementById('inStockSummaryFooter').innerHTML = '';
       } else {
          html = inStockProducts.map(p => {
             let value = p.stock * p.actualPrice;
             totalQty += p.stock;
             totalValue += value;
-            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td></tr>`;
+            // ตรวจสอบสถานะ COD/มัดจำ
+            let statusHtml = '';
+            let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+            let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+            if (pendingCodSales.length > 0) {
+              let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
+              statusHtml += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> รอ COD ${totalCodQty} เครื่อง</span><br>`;
+            }
+            if (depositSales.length > 0) {
+              let totalRemaining = depositSales.reduce((sum, s) => sum + s.depositRemaining, 0);
+              statusHtml += `<span class="badge bg-warning text-dark"><i class="fa-solid fa-hand-holding-dollar"></i> ติดมัดจำ</span><br><small class="text-danger fw-bold">ค้าง ฿${totalRemaining.toLocaleString()}</small>`;
+            }
+            if (!statusHtml) statusHtml = '<span class="text-muted">-</span>';
+            return `<tr><td class="text-start fw-medium">${p.name}</td><td><span class="badge bg-secondary">${p.brand}</span></td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td class="fw-bold fs-6">${p.stock}</td><td class="text-primary fw-bold">฿${value.toLocaleString()}</td><td>${statusHtml}</td></tr>`;
          }).join('');
          
-         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="3" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td></tr>`;
+         document.getElementById('inStockSummaryFooter').innerHTML = `<tr><td colspan="4" class="text-end text-dark fs-6">รวมรายการสินค้าคงเหลือทั้งหมด:</td><td class="text-dark fs-5">${totalQty} เครื่อง</td><td class="text-primary fs-4">฿${totalValue.toLocaleString()}</td><td></td></tr>`;
       }
       document.getElementById('inStockSummaryData').innerHTML = html;
     }
@@ -1892,9 +1953,9 @@
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td>${dateStr}</td><td class="text-start">${p.name}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+        return `<tr><td><span class="badge bg-dark" style="font-size:0.7rem;">${p.purchaseNo || '-'}</span></td><td>${dateStr}</td><td class="text-start">${p.name}</td><td class="text-muted small">${p.supplier || '-'}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}','${p.purchaseNo}','${p.supplier}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
       }).join('');
-      document.getElementById('productData').innerHTML = html || '<tr><td colspan="8" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
+      document.getElementById('productData').innerHTML = html || '<tr><td colspan="10" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
 
     function printProductDetail(productId) {
@@ -2108,6 +2169,21 @@
         togglePaymentFields();
         calcVAT();
         refreshAllData();
+
+        // แจ้งเตือนผ่าน LINE - ขายสินค้า
+        let lineMsg = `🛒 [รายการขายใหม่]\n` +
+          `บิล: ${receiptId}\n` +
+          `สินค้า: ${product.name}\n` +
+          `แบรนด์: ${product.brand}\n` +
+          `จำนวน: ${qty} เครื่อง\n` +
+          `ราคาขาย/เครื่อง: ฿${customPrice.toLocaleString()}\n` +
+          `ค่าส่ง: ฿${shippingCost.toLocaleString()}\n` +
+          `ยอดรวม: ฿${totalSales.toLocaleString()}\n` +
+          `กำไร: ฿${profit.toLocaleString()}\n` +
+          `ลูกค้า: ${saleData.cus_name}\n` +
+          `รูปแบบ: ${paymentMethod === 'CASH' ? 'เงินสด/โอน' : paymentMethod === 'DEPOSIT' ? 'มัดจำ (จ่าย ฿' + depositAmt.toLocaleString() + ' ค้าง ฿' + depositRemaining.toLocaleString() + ')' : 'COD (เก็บปลายทาง)'}\n` +
+          `ที่อยู่: ${saleData.address}`;
+        sendLineNotify(lineMsg);
       } catch (error) {
         console.error(error);
         Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการขายได้', 'error');
@@ -2746,6 +2822,51 @@
         }
       });
       document.getElementById('txTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted">ไม่มีประวัติรายรับ-รายจ่ายในเดือนนี้ที่เลือก</td></tr>';
+
+      // คำนวณสรุปตัวเลขรายรับ-รายจ่าย
+      let sumIncome = 0, sumExpense = 0;
+      let sumIncomeOther = 0, sumExpenseOther = 0;
+      let notebookCategories = ['ขายสินค้า', 'ซื้อสินค้าเข้า'];
+      
+      sortedTx.forEach(t => {
+        let parts2 = t.date.split('/');
+        let tMonth2 = parts2.length === 3 ? parts2[1] + "/" + parts2[2] : "";
+        if (tMonth2 === targetMonth) {
+          let amt = Number(t.amount);
+          let isNotebook = notebookCategories.some(cat => t.category.startsWith(cat));
+          if (t.type === 'รายรับ') {
+            sumIncome += amt;
+            if (!isNotebook) sumIncomeOther += amt;
+          } else if (t.type === 'รายจ่าย') {
+            sumExpense += amt;
+            if (!isNotebook) sumExpenseOther += amt;
+          }
+        }
+      });
+      
+      let fmtMoney = (v) => '฿' + v.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      
+      let elIncome = document.getElementById('txSumIncome');
+      let elExpense = document.getElementById('txSumExpense');
+      let elBalance = document.getElementById('txSumBalance');
+      let elIncomeOther = document.getElementById('txSumIncomeOther');
+      let elExpenseOther = document.getElementById('txSumExpenseOther');
+      let elBalanceOther = document.getElementById('txSumBalanceOther');
+      
+      if(elIncome) elIncome.innerText = fmtMoney(sumIncome);
+      if(elExpense) elExpense.innerText = fmtMoney(sumExpense);
+      if(elBalance) {
+        let bal = sumIncome - sumExpense;
+        elBalance.innerText = fmtMoney(bal);
+        elBalance.className = 'fw-bold m-0 ' + (bal >= 0 ? 'text-primary' : 'text-danger');
+      }
+      if(elIncomeOther) elIncomeOther.innerText = fmtMoney(sumIncomeOther);
+      if(elExpenseOther) elExpenseOther.innerText = fmtMoney(sumExpenseOther);
+      if(elBalanceOther) {
+        let balOther = sumIncomeOther - sumExpenseOther;
+        elBalanceOther.innerText = fmtMoney(balOther);
+        elBalanceOther.className = 'fw-bold m-0 ' + (balOther >= 0 ? 'text-secondary' : 'text-danger');
+      }
     }
 
     function printTxReport() {
@@ -2920,7 +3041,9 @@
         cost: Number(document.getElementById('p_cost').value),
         actual_price: Number(document.getElementById('p_actualPrice').value),
         stock: Number(document.getElementById('p_stock').value),
-        fb_link: document.getElementById('p_fbLink').value || null
+        fb_link: document.getElementById('p_fbLink').value || null,
+        purchase_no: document.getElementById('p_purchaseNo') ? document.getElementById('p_purchaseNo').value || null : null,
+        supplier: document.getElementById('p_supplier') ? document.getElementById('p_supplier').value || null : null
       };
 
       Swal.showLoading();
@@ -2930,19 +3053,35 @@
           if (error) throw error;
         } else {
           prodData.id = "PROD-" + Date.now();
+          if (!prodData.purchase_no) prodData.purchase_no = "PO-" + Date.now();
           const { error } = await supabaseClient.from('products').insert([prodData]);
           if (error) throw error;
         }
         Swal.fire('สำเร็จ', 'บันทึกข้อมูลสินค้าเรียบร้อย', 'success');
         resetProductForm();
         refreshAllData();
+
+        // แจ้งเตือนผ่าน LINE - ซื้อเข้า/อัปเดตสินค้า
+        let lineMsg = id
+          ? `✏️ [แก้ไขรายการสินค้า]\n`
+          : `📦 [รายการซื้อเข้าใหม่]\n`;
+        lineMsg += `🔖 รหัส PO: ${prodData.purchase_no || '-'}\n` +
+            `🏢 ซื้อจาก: ${prodData.supplier || '-'}\n` +
+            `สินค้า: ${prodData.name}\n` +
+            `แบรนด์: ${prodData.brand}\n` +
+            `จำนวน: ${prodData.stock} เครื่อง\n` +
+            `ต้นทุน/เครื่อง: ฿${prodData.cost.toLocaleString()}\n` +
+            `ราคาขาย/เครื่อง: ฿${prodData.actual_price.toLocaleString()}\n` +
+            `รวมต้นทุน: ฿${(prodData.cost * prodData.stock).toLocaleString()}\n` +
+            `ลิงก์: ${prodData.fb_link || '-'}`;
+        sendLineNotify(lineMsg);
       } catch (error) {
         console.error(error);
         Swal.fire('ล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
     }
 
-    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "") {
+    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "", purchaseNo = "", supplier = "") {
       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
       // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
@@ -2960,15 +3099,44 @@
       document.getElementById('p_actualPrice').value = actualPrice;
       document.getElementById('p_stock').value = stock;
       document.getElementById('p_fbLink').value = fbLink && fbLink !== 'undefined' ? fbLink : "";
+      if(document.getElementById('p_purchaseNo')) document.getElementById('p_purchaseNo').value = purchaseNo && purchaseNo !== 'undefined' ? purchaseNo : "";
+      if(document.getElementById('p_supplier')) document.getElementById('p_supplier').value = supplier && supplier !== 'undefined' ? supplier : "";
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
+    }
+
+    function updatePurchaseNoBrand() {
+      let poEl = document.getElementById('p_purchaseNo');
+      let brandEl = document.getElementById('p_brand');
+      if (poEl && brandEl) {
+        let currentPo = poEl.value;
+        let brand = brandEl.value || '';
+        if (brand === 'อื่นๆ') brand = 'OTHER';
+        brand = brand.toUpperCase();
+        
+        // If it starts with PO- and contains numbers (meaning it's auto-generated)
+        // We will update it.
+        if (/^PO-.*\d{10,}$/.test(currentPo) || currentPo === "") {
+            let timestamp = currentPo.match(/\d{10,}$/);
+            let ts = timestamp ? timestamp[0] : Date.now();
+            if (brand) {
+                poEl.value = "PO-" + brand + "-" + ts;
+            } else {
+                poEl.value = "PO-" + ts;
+            }
+        }
+      }
     }
 
     function resetProductForm() {
       document.getElementById('productPageTitle').innerText = "จัดการข้อมูลสินค้าในคลัง / นำเข้าสต็อก";
       document.getElementById('formProduct').reset();
       document.getElementById('p_id').value = '';
+      if(document.getElementById('p_purchaseNo')) {
+        document.getElementById('p_purchaseNo').value = "PO-" + Date.now();
+        updatePurchaseNoBrand();
+      }
       let today = new Date().toISOString().split('T')[0];
       document.getElementById('p_date').value = today;
       document.getElementById('btnSaveProduct').className = "btn btn-custom-orange w-100";
@@ -3010,6 +3178,7 @@
       
       // Calculate bank totals
       let bankTotals = {};
+      let accountTotals = {};
       
       // Sort savings by date (newest first)
       savings.sort((a, b) => {
@@ -3024,6 +3193,12 @@
         let bankName = t.bank || 'ไม่ระบุธนาคาร';
         if (!bankTotals[bankName]) bankTotals[bankName] = 0;
         bankTotals[bankName] += Number(t.amount);
+        // Track by account number
+        if (t.accountNo) {
+          let accKey = bankName + ' | ' + t.accountNo;
+          if (!accountTotals[accKey]) accountTotals[accKey] = { bank: bankName, accountNo: t.accountNo, total: 0 };
+          accountTotals[accKey].total += Number(t.amount);
+        }
         
         let displayMonth = t.note || '-';
         if(displayMonth !== '-' && displayMonth.includes('-')) {
@@ -3035,19 +3210,20 @@
             }
         }
         
-        let actionButtons = '<button class="btn btn-xs btn-warning px-2 py-1 small btn-sm me-1" onclick="editSaving(\'' + t.id + '\',\'' + t.date + '\',' + t.amount + ',\'' + (t.note || '') + '\', \'' + (t.bank || '') + '\', \'' + (t.category || '') + '\')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>' +
+        let actionButtons = '<button class="btn btn-xs btn-warning px-2 py-1 small btn-sm me-1" onclick="editSaving(\'' + t.id + '\',\'' + t.date + '\',' + t.amount + ',\'' + (t.note || '') + '\', \'' + (t.bank || '') + '\', \'' + (t.category || '') + '\', \'' + (t.accountNo || '') + '\')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>' +
           '<button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteSavingConfirm(\'' + t.id + '\')" title="ลบ"><i class="fa-solid fa-trash"></i></button>';
         html += '<tr>' +
                '<td><span class="badge bg-dark" style="font-size:0.75rem;">' + t.id + '</span></td>' +
                '<td>' + t.date + '</td>' +
                '<td><span class="badge border border-primary text-primary">' + (t.bank || '-') + '</span>' + (t.category && t.category.includes(' - ') ? '<br><small class="text-muted">' + t.category.split(' - ')[1] + '</small>' : '') + '</td>' +
+               '<td><span class="badge bg-light text-dark border">' + (t.accountNo || '-') + '</span></td>' +
                '<td class="text-start fw-medium text-muted">' + displayMonth + '</td>' +
                '<td class="fw-bold text-success">\u0e3f' + Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>' +
                '<td>' + actionButtons + '</td>' +
             '</tr>';
       });
       
-      document.getElementById('savingsTableBody').innerHTML = html || '<tr><td colspan="6" class="text-muted text-center py-3">ยังไม่มีประวัติการฝากเงิน</td></tr>';
+      document.getElementById('savingsTableBody').innerHTML = html || '<tr><td colspan="7" class="text-muted text-center py-3">ยังไม่มีประวัติการฝากเงิน</td></tr>';
       
       // Update Dashboard Cards
       let tsv = document.getElementById('totalSavingsValue'); if(tsv) tsv.innerText = '฿' + totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -3083,7 +3259,22 @@
                   </div>`;
               }
           }
-          dashboardContainer.innerHTML = totalCardHtml + bankCardsHtml;
+          // Account breakdown cards
+          let accountCardsHtml = '';
+          for (let accKey in accountTotals) {
+              let acc = accountTotals[accKey];
+              if (acc.total > 0) {
+                  accountCardsHtml += `<div class="col-md-4 mb-3">
+                    <div class="stat-card bg-white px-3 py-4 border-start border-secondary border-4 shadow-sm h-100">
+                      <h6 class="small">${acc.bank}</h6>
+                      <p class="small text-muted m-0 mb-1"><i class="fa-solid fa-credit-card me-1"></i>${acc.accountNo}</p>
+                      <h4 class="text-dark fw-bold m-0">เธฟ${acc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
+                      <i class="fa-solid fa-building-columns bg-icon" style="opacity: 0.05;"></i>
+                    </div>
+                  </div>`;
+              }
+          }
+          dashboardContainer.innerHTML = totalCardHtml + bankCardsHtml + accountCardsHtml;
       }
     }
 
@@ -3097,7 +3288,8 @@
         category: acc ? 'ฝากเงินออมทรัพย์ - ' + acc : 'ฝากเงินออมทรัพย์',
         amount: Number(document.getElementById('sv_amount').value),
         bank: document.getElementById('sv_bank').value,
-        note: document.getElementById('sv_note').value
+        note: document.getElementById('sv_note').value,
+        account_no: document.getElementById('sv_accountNo') ? document.getElementById('sv_accountNo').value || null : null
       };
       Swal.showLoading();
       try {
@@ -3118,7 +3310,7 @@
       }
     }
 
-    function editSaving(id, dateStr, amount, note, bank, category) {
+    function editSaving(id, dateStr, amount, note, bank, category, accountNo) {
       document.getElementById('sv_id').value = id;
       var parts = dateStr.split('/');
       if (parts.length === 3) {
@@ -3132,6 +3324,9 @@
       if(document.getElementById('sv_account')) {
           document.getElementById('sv_account').value = (category && category.includes(' - ')) ? category.split(' - ')[1] : '';
       }
+      if(document.getElementById('sv_accountNo')) {
+          document.getElementById('sv_accountNo').value = accountNo && accountNo !== 'undefined' ? accountNo : '';
+      }
       document.getElementById('btnSaveSaving').className = "btn btn-primary fw-bold text-white";
       document.getElementById('btnSaveSaving').innerHTML = '<i class="fa-solid fa-check"></i> อัปเดตรายการฝาก';
       document.getElementById('btnCancelSavingEdit').classList.remove('d-none');
@@ -3142,6 +3337,7 @@
       document.getElementById('savingsForm').reset();
       document.getElementById('sv_id').value = '';
       if(document.getElementById('sv_account')) document.getElementById('sv_account').value = '';
+      if(document.getElementById('sv_accountNo')) document.getElementById('sv_accountNo').value = '';
       document.getElementById('sv_date').value = new Date().toISOString().split('T')[0];
       document.getElementById('btnSaveSaving').className = "btn btn-warning fw-bold text-dark";
       document.getElementById('btnSaveSaving').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกเงินฝาก';
@@ -3177,6 +3373,10 @@
     window.onload = function () {
       let today = new Date().toISOString().split('T')[0];
       document.getElementById('p_date').value = today;
+      if(document.getElementById('p_purchaseNo') && !document.getElementById('p_purchaseNo').value) {
+        document.getElementById('p_purchaseNo').value = "PO-" + Date.now();
+        updatePurchaseNoBrand();
+      }
       document.getElementById('saleDate').value = today;
       document.getElementById('tx_date').value = today;
       if (document.getElementById('sv_date')) {

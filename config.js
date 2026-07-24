@@ -14,4 +14,4 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // LINE Messaging API - Google Apps Script Web App URL
 // นำ URL ของ Web App ที่ได้จาก Google Apps Script มาใส่ที่นี่ เพื่อเปิดใช้งานการแจ้งเตือน
-const LINE_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyyz02zjUwdoFSfknr7MSbsuGp5HfUFGeTSfywaRmkDwMpDNGdRIyYRlK53ieD9tNEsZA/exec';
+const LINE_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwDGtnieANYZ8ZoKr6g5RsuaIs04a5GgMw__4TI2-j2ph6HiQuCXOxo0J92gu4h7PDpJA/exec';
