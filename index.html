@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 
 <head>
@@ -1053,9 +1053,22 @@
       <div id="page-income-expense" class="page-section d-none d-print-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold text-dark-blue m-0">ระบบบันทึกรายรับ - รายจ่าย (เพื่อยื่นภาษีประจำปี)</h4>
-          <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="printTxReport()">
-            <i class="fa-solid fa-print"></i> พิมพ์รายงานบัญชี (ใบปะหน้าภาษี)
-          </button>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="printTxReport()">
+              <i class="fa-solid fa-print"></i> พิมพ์รายงานบัญชี (ใบปะหน้าภาษี)
+            </button>
+            <div class="btn-group shadow-sm">
+              <button type="button" class="btn btn-danger fw-bold dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-file-invoice-dollar me-1"></i> พิมพ์ใบแจกแจงรายจ่าย
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 12px; min-width: 280px;">
+                <li><a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center" href="javascript:void(0)" onclick="printExpenseReport('all')"><i class="fa-solid fa-list-check text-danger me-2 fs-6" style="width: 20px;"></i> รายจ่ายทั้งหมด (รวมทุกประเภท)</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center" href="javascript:void(0)" onclick="printExpenseReport('notebook')"><i class="fa-solid fa-laptop text-primary me-2 fs-6" style="width: 20px;"></i> รายจ่ายเกี่ยวกับโน๊ตบุ๊ค</a></li>
+                <li><a class="dropdown-item py-2 px-3 fw-medium d-flex align-items-center" href="javascript:void(0)" onclick="printExpenseReport('other')"><i class="fa-solid fa-wallet text-warning me-2 fs-6" style="width: 20px;"></i> รายจ่ายที่ไม่เกี่ยวกับโน๊ตบุ๊ค</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
         <div class="card p-4 mb-4 border-top border-primary border-4">
           <h5 class="fw-bold text-dark-blue mb-3" id="txFormTitle"><i class="fa-solid fa-circle-plus text-primary"></i>
@@ -1320,45 +1333,184 @@
       </div>
     </div>
 
-    <div id="printTxDetailSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
-      <div class="invoice-box" style="max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 20px;">
-        <div class="text-center mb-4">
-          <h4 class="fw-bold m-0" style="color:#0f172a;">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
-          <h5 class="fw-bold mt-2" style="color:#f97316;">รายละเอียดรายการบัญชี (Transaction Slip)</h5>
+    <div id="printTxDetailSection" class="print-wrapper-box d-none" style="padding: 30px; background:#fff; color:#000;">
+      <div class="invoice-box" style="max-width: 750px; margin: auto; border: 2px solid #334155; padding: 25px; border-radius: 8px;">
+        <div class="row pb-3 mb-3" style="border-bottom: 2px solid #e2e8f0;">
+          <div class="col-7 text-start">
+            <h5 class="fw-bold text-dark-blue m-0">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h5>
+            <p class="small text-muted m-0 mt-1" style="font-size: 0.8rem;">
+              ทะเบียนนิติบุคคล: 0413569001497 (สำนักงานใหญ่)<br>
+              119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี 41000<br>
+              โทรศัพท์: 090-842-2774
+            </p>
+          </div>
+          <div class="col-5 text-end d-flex flex-column justify-content-center">
+            <h4 class="fw-bold m-0" style="color: #dc3545;"><i class="fa-solid fa-file-invoice me-1"></i> ใบสำคัญจ่าย</h4>
+            <p class="small fw-bold m-0 mt-1" style="color: #64748b;">PAYMENT VOUCHER / ใบปะหน้าสลิป</p>
+            <div class="mt-2 text-end">
+              <span class="badge bg-light text-dark border p-2" style="font-size: 0.85rem;" id="ptxIdBadge">รหัส: -</span>
+            </div>
+          </div>
         </div>
         
-        <table class="table table-bordered">
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="p-3 bg-light rounded border h-100">
+              <span class="small text-muted d-block mb-1">วันที่ชำระเงิน / บันทึก (Date):</span>
+              <strong class="fs-6 text-dark" id="ptxDate">-</strong>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded border h-100">
+              <span class="small text-muted d-block mb-1">ประเภทรายการ (Type):</span>
+              <strong class="fs-6 text-danger" id="ptxType">รายจ่าย (ไม่เกี่ยวกับโน๊ตบุ๊ค)</strong>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-bordered mb-4">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <th class="py-2 text-start">หมวดหมู่ค่าใช้จ่าย (Category)</th>
+              <th class="py-2 text-start">รายละเอียด / คำอธิบาย (Description)</th>
+              <th class="py-2 text-end" style="width: 28%;">จำนวนเงิน (บาท)</th>
+            </tr>
+          </thead>
           <tbody>
             <tr>
-              <th style="width: 30%; background: #f8fafc;">รหัสรายการ (ID)</th>
-              <td id="ptxId" class="fw-bold"></td>
+              <td class="py-3 fw-medium text-start" id="ptxCategory" style="font-size: 1.05rem;">-</td>
+              <td class="py-3 text-start text-muted" id="ptxNote" style="font-size: 0.95rem;">-</td>
+              <td class="py-3 text-end fw-bold text-danger" id="ptxAmount" style="font-size: 1.25rem;">฿0.00</td>
             </tr>
-            <tr>
-              <th style="background: #f8fafc;">วันที่ (Date)</th>
-              <td id="ptxDate"></td>
-            </tr>
-            <tr>
-              <th style="background: #f8fafc;">ประเภท (Type)</th>
-              <td id="ptxType" class="fw-bold"></td>
-            </tr>
-            <tr>
-              <th style="background: #f8fafc;">หมวดหมู่ (Category)</th>
-              <td id="ptxCategory"></td>
-            </tr>
-            <tr>
-              <th style="background: #f8fafc;">จำนวนเงิน (Amount)</th>
-              <td id="ptxAmount" class="fw-bold" style="font-size: 1.2rem;"></td>
-            </tr>
-            <tr>
-              <th style="background: #f8fafc;">หมายเหตุ (Note)</th>
-              <td id="ptxNote"></td>
+            <tr style="background: #fff5f5;">
+              <th colspan="2" class="text-end py-2 fw-bold" style="color: #dc3545;">ยอดสุทธิที่ชำระ (Total Amount):</th>
+              <th class="text-end py-2 fw-bold text-danger fs-5" id="ptxTotalAmount">฿0.00</th>
             </tr>
           </tbody>
         </table>
 
-        <div class="row mt-5 text-center small pt-4">
-          <div class="col-6"><br><br>...................................................<br>ผู้พิมพ์รายการ</div>
-          <div class="col-6"><br><br>...................................................<br>ผู้ตรวจสอบ</div>
+        <div style="display: none;"><span id="ptxId"></span></div>
+
+        <!-- Area to attach Slip -->
+        <div class="my-4 p-4 text-center rounded" style="border: 2px dashed #cbd5e1; background: #f8fafc; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <i class="fa-solid fa-paperclip text-secondary fs-3 mb-2"></i>
+          <h6 class="fw-bold text-secondary m-0">พื้นที่สำหรับแนบหลักฐานการชำระเงิน / สลิปโอนเงิน / ใบเสร็จ</h6>
+          <small class="text-muted mt-1">(Attach Payment Slip or Receipt Here)</small>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #e2e8f0;">
+          <div class="col-4">
+            <br><br>...................................................<br>
+            <strong>ผู้จ่ายเงิน / ผู้จัดทำ</strong><br>
+            <span class="text-muted">(Prepared By)</span>
+          </div>
+          <div class="col-4">
+            <br><br>...................................................<br>
+            <strong>ผู้ตรวจสอบบัญชี</strong><br>
+            <span class="text-muted">(Checked By)</span>
+          </div>
+          <div class="col-4">
+            <br><br>...................................................<br>
+            <strong>ผู้อนุมัติ</strong><br>
+            <span class="text-muted">(Approved By)</span>
+          </div>
+        </div>
+
+        <div class="text-center mt-4 pt-3 border-top small text-muted">
+          <p class="m-0" style="font-size: 0.75rem;">เอกสารใบสำคัญจ่ายจัดทำขึ้นผ่านระบบห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร — ใช้เป็นหลักฐานประกอบการยื่นแบบแสดงรายการภาษี</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PRINT: Expense Detail Report (แยกรายการรายจ่าย) ===== -->
+    <div id="printExpenseReportSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
+      <div class="invoice-box" style="max-width: 900px;">
+        <!-- Header -->
+        <div class="row mb-3 pb-3" style="border-bottom: 3px solid #dc3545;">
+          <div class="col-7 text-start">
+            <h4 class="fw-bold m-0" style="color:#0f172a;">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
+            <p class="small m-0">ทะเบียนนิติบุคคลเลขที่ 0413569001497 (สำนักงานใหญ่)<br>ที่อยู่: 119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี ปณ.41000<br>โทรศัพท์: 0908422774</p>
+          </div>
+          <div class="col-5 text-end">
+            <h4 class="fw-bold m-0" style="color:#dc3545;" id="expPrintTitle"><i class="fa-solid fa-file-invoice-dollar"></i> ใบแจกแจงรายจ่าย</h4>
+            <p class="small m-0 mt-1" style="color:#dc3545;" id="expPrintSubtitle">Expense Detail Report (สำหรับยื่นภาษี)</p>
+            <p class="m-0 mt-2"><strong>วันที่พิมพ์:</strong> <span id="expPrintDate"></span></p>
+            <p class="m-0 fw-bold" id="expPrintMonth">ประจำเดือน: ...</p>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-4">
+            <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;">
+              <small class="text-muted fw-bold">จำนวนรายการรายจ่าย</small>
+              <h4 class="fw-bold m-0 mt-1" style="color:#dc3545;" id="expTotalCount">0</h4>
+              <small class="text-muted">รายการ</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;">
+              <small class="text-muted fw-bold">ยอดรวมรายจ่ายทั้งหมด</small>
+              <h4 class="fw-bold m-0 mt-1" style="color:#dc3545;" id="expTotalAmount">฿0.00</h4>
+              <small class="text-muted">บาท</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; text-align: center;">
+              <small class="text-muted fw-bold">ยอดรวมรายรับ (อ้างอิง)</small>
+              <h4 class="fw-bold m-0 mt-1" style="color:#16a34a;" id="expRefIncome">฿0.00</h4>
+              <small class="text-muted">บาท</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expense Table -->
+        <table class="table table-bordered align-middle text-center" style="font-size:0.85rem;">
+          <thead>
+            <tr style="background: #dc3545; color: white;">
+              <th style="width:6%;">ลำดับ</th>
+              <th style="width:10%;">รหัสรายการ</th>
+              <th style="width:12%;">วัน/เดือน/ปี</th>
+              <th class="text-start">หมวดหมู่รายจ่าย</th>
+              <th class="text-start" style="width:25%;">หมายเหตุ / อ้างอิง</th>
+              <th style="width:15%;">จำนวนเงิน (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="expPrintBody"></tbody>
+          <tfoot style="background: #f8f9fa;">
+            <tr class="fw-bold" style="font-size: 1rem;">
+              <td colspan="5" class="text-end" style="background: #fef2f2;">รวมยอดรายจ่ายทั้งสิ้น</td>
+              <td class="text-danger" style="background: #fef2f2; font-size: 1.1rem;" id="expPrintTotal">0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Category Summary -->
+        <div class="mt-4 mb-3">
+          <h6 class="fw-bold" style="color:#0f172a;"><i class="fa-solid fa-chart-pie me-1" style="color:#dc3545;"></i> สรุปรายจ่ายแยกตามหมวดหมู่</h6>
+          <table class="table table-sm table-bordered" style="font-size:0.85rem; max-width: 600px;">
+            <thead class="table-light">
+              <tr>
+                <th class="text-start">หมวดหมู่</th>
+                <th style="width: 15%;">จำนวนรายการ</th>
+                <th style="width: 25%;">ยอดรวม (บาท)</th>
+              </tr>
+            </thead>
+            <tbody id="expCategorySummary"></tbody>
+          </table>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #ccc;">
+          <div class="col-4"><br><br>...................................................<br>ผู้จัดทำเอกสาร</div>
+          <div class="col-4"><br><br>...................................................<br>ผู้ตรวจสอบบัญชี</div>
+          <div class="col-4"><br><br>...................................................<br>ผู้มีอำนาจอนุมัติ</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4 small text-muted" style="border-top: 1px solid #e2e8f0; padding-top: 10px;">
+          <p class="m-0">เอกสารนี้จัดทำโดยระบบจัดการ ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร — สำหรับใช้ประกอบการยื่นภาษีเท่านั้น</p>
         </div>
       </div>
     </div>
@@ -1538,7 +1690,7 @@
     // sales.date & transactions.date เป็น type `date` (YYYY-MM-DD) จาก Supabase
     // แปลงเป็น DD/MM/YYYY สำหรับแสดงผลใน UI
     function mapProduct(p) {
-      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "", purchaseNo: p.purchase_no || "", supplier: p.supplier || "" };
+      return { id: p.id, name: p.name, brand: p.brand, cost: Number(p.cost), actualPrice: Number(p.actual_price), stock: p.stock, updatedAt: p.updated_at, fbLink: p.fb_link || "", purchaseNo: p.purchase_no || "", supplier: p.supplier || "", serialNumber: p.serial_number || "", cpu: p.cpu || "", ram: p.ram || "", gpu: p.gpu || "", screenSize: p.screen_size || "", color: p.color || "", warranty: p.warranty || "" };
     }
     function mapSale(s) {
       return { receiptId: s.invoice_id, date: formatDateToTH(s.date), createdAt: s.created_at || s.date, productId: s.product_id, productName: s.product_name, qty: s.qty, totalCost: Number(s.total_cost), subTotal: Number(s.sub_total), profit: Number(s.profit), shippingCost: Number(s.shipping_cost || 0), cusName: s.cus_name, address: s.address, vat: Number(s.vat), totalSales: Number(s.grand_total), depositAmount: Number(s.deposit_amount || 0), depositRemaining: Number(s.deposit_remaining || 0), paymentMethod: s.payment_method || 'CASH', status: s.status || 'COMPLETED', completedDate: s.completed_date ? formatDateToTH(s.completed_date) : null };
@@ -1953,7 +2105,7 @@
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td><span class="badge bg-dark" style="font-size:0.7rem;">${p.purchaseNo || '-'}</span></td><td>${dateStr}</td><td class="text-start">${p.name}</td><td class="text-muted small">${p.supplier || '-'}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}','${p.purchaseNo}','${p.supplier}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+        return `<tr><td><span class="badge bg-dark" style="font-size:0.7rem;">${p.purchaseNo || '-'}</span></td><td>${dateStr}</td><td class="text-start">${p.name}</td><td class="text-muted small">${p.supplier || '-'}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}','${p.purchaseNo}','${p.supplier}','${p.serialNumber}','${p.cpu}','${p.ram}','${p.gpu}','${p.screenSize}','${p.color}','${p.warranty}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
       }).join('');
       document.getElementById('productData').innerHTML = html || '<tr><td colspan="10" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
@@ -1988,6 +2140,15 @@
       document.getElementById('pdTotalCostCalc').innerText = `(฿${p.cost.toLocaleString()} × ${p.stock} ชิ้น)`;
       document.getElementById('pdTotalSellValue').innerText = '฿' + totalSellValue.toLocaleString();
       document.getElementById('pdTotalSellCalc').innerText = `(฿${p.actualPrice.toLocaleString()} × ${p.stock} ชิ้น)`;
+
+      // Set spec data for print
+      document.getElementById('pdSerialNumber').innerText = p.serialNumber || '-';
+      document.getElementById('pdCpu').innerText = p.cpu || '-';
+      document.getElementById('pdRam').innerText = p.ram || '-';
+      document.getElementById('pdGpu').innerText = p.gpu || '-';
+      document.getElementById('pdScreenSize').innerText = p.screenSize || '-';
+      document.getElementById('pdColor').innerText = p.color || '-';
+      document.getElementById('pdWarranty').innerText = p.warranty || '-';
 
       if (p.fbLink) {
         document.getElementById('pdFbLinkRow').style.display = 'block';
@@ -2802,8 +2963,14 @@
         let parts = t.date.split('/');
         let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
         if (tMonth === targetMonth) {
-          let actionButtons = `
-            <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
+          let actionButtons = '';
+          let catStr = (t.category || '');
+          let isNotebook = ['ขายสินค้า', 'ซื้อสินค้าเข้า'].some(cat => catStr.startsWith(cat)) || catStr.includes('โน๊ตบุ๊ค') || catStr.toLowerCase().includes('notebook');
+          if (t.type === 'รายจ่าย' && !isNotebook) {
+            actionButtons += `<button class="btn btn-xs btn-info text-white px-2 py-1 small btn-sm me-1 shadow-sm" onclick="printTxDetailById('${t.id}')" title="พิมพ์ใบสำคัญจ่าย (ปะหน้าสลิป)"><i class="fa-solid fa-print"></i></button>`;
+          }
+          actionButtons += `
+            <button class="btn btn-xs btn-warning px-2 py-1 small btn-sm me-1" onclick="editTransaction('${t.id}','${t.date}','${t.type}','${t.category}',${t.amount},'${t.note || ""}')" title="แก้ไขรายการ"><i class="fa-solid fa-pen"></i></button>
             <button class="btn btn-xs btn-danger px-2 py-1 small btn-sm" onclick="deleteTxConfirm('${t.id}')" title="ลบรายการ"><i class="fa-solid fa-trash"></i></button>
           `;
           if (t.source !== 'manual') {
@@ -2925,6 +3092,146 @@
       setTimeout(() => { document.getElementById('printTxReportSection').classList.add('d-none'); }, 1000);
     }
 
+    function printExpenseReport(mode = 'all') {
+      let filter = document.getElementById('monthFilter').value;
+      let targetMonth = filter ? filter.split('-')[1] + "/" + filter.split('-')[0] : "ทั้งหมด";
+
+      // อัปเดตหัวข้อและชื่อเอกสารตามประเภทที่เลือกพิมพ์
+      let titleEl = document.getElementById('expPrintTitle');
+      let subtitleEl = document.getElementById('expPrintSubtitle');
+      if (titleEl && subtitleEl) {
+        if (mode === 'notebook') {
+          titleEl.innerHTML = '<i class="fa-solid fa-laptop me-2"></i>ใบแจกแจงรายจ่าย (เกี่ยวกับโน๊ตบุ๊ค)';
+          subtitleEl.innerText = 'Expense Detail Report - Notebook Related (สำหรับยื่นภาษี)';
+        } else if (mode === 'other') {
+          titleEl.innerHTML = '<i class="fa-solid fa-wallet me-2"></i>ใบแจกแจงรายจ่าย (ที่ไม่เกี่ยวกับโน๊ตบุ๊ค)';
+          subtitleEl.innerText = 'Expense Detail Report - Non-Notebook Related (สำหรับยื่นภาษี)';
+        } else {
+          titleEl.innerHTML = '<i class="fa-solid fa-file-invoice-dollar me-2"></i>ใบแจกแจงรายจ่าย (รวมทุกประเภท)';
+          subtitleEl.innerText = 'Expense Detail Report - All Expenses (สำหรับยื่นภาษี)';
+        }
+      }
+
+      // Set print date
+      let today = new Date();
+      let printDate = String(today.getDate()).padStart(2,'0') + '/' + String(today.getMonth()+1).padStart(2,'0') + '/' + today.getFullYear();
+      document.getElementById('expPrintDate').innerText = printDate;
+      document.getElementById('expPrintMonth').innerText = "ประจำเดือน: " + targetMonth;
+
+      let allTx = getAllTransactions();
+      // Sort from old to new
+      let sortedTx = allTx.sort((a, b) => {
+        let dateA = a.date.split('/').reverse().join('');
+        let dateB = b.date.split('/').reverse().join('');
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.id.localeCompare(b.id);
+      });
+
+      let notebookCategories = ['ขายสินค้า', 'ซื้อสินค้าเข้า'];
+
+      // Filter only expenses for selected month and category type
+      let expenses = [];
+      let totalIncome = 0;
+      sortedTx.forEach(t => {
+        let parts = t.date.split('/');
+        let tMonth = parts.length === 3 ? parts[1] + "/" + parts[2] : "";
+        if (filter && tMonth !== targetMonth) return;
+        
+        let catStr = (t.category || '');
+        let isNotebook = notebookCategories.some(cat => catStr.startsWith(cat)) || catStr.includes('โน๊ตบุ๊ค') || catStr.toLowerCase().includes('notebook');
+
+        if (t.type === 'รายรับ') {
+          if (mode === 'notebook' && !isNotebook) return;
+          if (mode === 'other' && isNotebook) return;
+          totalIncome += Number(t.amount);
+          return;
+        }
+        if (t.type === 'รายจ่าย') {
+          if (mode === 'notebook' && !isNotebook) return;
+          if (mode === 'other' && isNotebook) return;
+          expenses.push(t);
+        }
+      });
+
+      // Build expense table
+      let html = '';
+      let totalExpense = 0;
+      let categoryMap = {};
+      let count = 1;
+
+      expenses.forEach(t => {
+        let amt = Number(t.amount);
+        totalExpense += amt;
+
+        // Track category summary
+        let cat = t.category || 'ไม่ระบุหมวดหมู่';
+        if (!categoryMap[cat]) categoryMap[cat] = { count: 0, total: 0 };
+        categoryMap[cat].count++;
+        categoryMap[cat].total += amt;
+
+        html += '<tr>' +
+          '<td>' + count++ + '</td>' +
+          '<td><small style="font-size:0.75rem;">' + t.id + '</small></td>' +
+          '<td>' + t.date + '</td>' +
+          '<td class="text-start fw-medium">' + t.category + '</td>' +
+          '<td class="text-start text-muted" style="font-size:0.8rem;">' + (t.note || '-') + '</td>' +
+          '<td class="fw-bold text-danger">' + amt.toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>' +
+          '</tr>';
+      });
+
+      if (html === '') html = '<tr><td colspan="6" class="text-muted text-center py-4">ไม่มีรายการรายจ่ายในเดือนที่เลือก</td></tr>';
+
+      document.getElementById('expPrintBody').innerHTML = html;
+      document.getElementById('expPrintTotal').innerText = totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('expTotalCount').innerText = expenses.length;
+      document.getElementById('expTotalAmount').innerText = '฿' + totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('expRefIncome').innerText = '฿' + totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+      // Build category summary
+      let catHtml = '';
+      let catEntries = Object.entries(categoryMap).sort((a, b) => b[1].total - a[1].total);
+      catEntries.forEach(([cat, data]) => {
+        catHtml += '<tr>' +
+          '<td class="text-start">' + cat + '</td>' +
+          '<td>' + data.count + '</td>' +
+          '<td class="fw-bold text-danger">' + data.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>' +
+          '</tr>';
+      });
+      document.getElementById('expCategorySummary').innerHTML = catHtml;
+
+      document.getElementById('printExpenseReportSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printExpenseReportSection').classList.add('d-none'); }, 1000);
+    }
+
+    function printTxDetailById(id) {
+      let allTx = getAllTransactions();
+      let tx = allTx.find(t => t.id === id);
+      if (!tx) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลรายการที่ต้องการพิมพ์', 'error');
+        return;
+      }
+      let elId = document.getElementById('ptxId');
+      let elBadge = document.getElementById('ptxIdBadge');
+      if(elId) elId.innerText = tx.id;
+      if(elBadge) elBadge.innerText = 'รหัส: ' + tx.id;
+      
+      document.getElementById('ptxDate').innerText = tx.date || '-';
+      document.getElementById('ptxType').innerText = tx.type + ' (ไม่เกี่ยวกับโน๊ตบุ๊ค)';
+      document.getElementById('ptxCategory').innerText = tx.category || '-';
+      document.getElementById('ptxNote').innerText = tx.note || 'ไม่มีหมายเหตุเพิ่มเติม';
+      
+      let amtStr = '฿' + Number(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 });
+      let elAmt = document.getElementById('ptxAmount');
+      let elTotal = document.getElementById('ptxTotalAmount');
+      if(elAmt) elAmt.innerText = amtStr;
+      if(elTotal) elTotal.innerText = amtStr;
+
+      document.getElementById('printTxDetailSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printTxDetailSection').classList.add('d-none'); }, 1000);
+    }
+
     async function submitTransaction(e) {
       e.preventDefault();
       let id = document.getElementById('tx_id').value;
@@ -3043,7 +3350,14 @@
         stock: Number(document.getElementById('p_stock').value),
         fb_link: document.getElementById('p_fbLink').value || null,
         purchase_no: document.getElementById('p_purchaseNo') ? document.getElementById('p_purchaseNo').value || null : null,
-        supplier: document.getElementById('p_supplier') ? document.getElementById('p_supplier').value || null : null
+        supplier: document.getElementById('p_supplier') ? document.getElementById('p_supplier').value || null : null,
+        serial_number: document.getElementById('p_serialNumber').value || null,
+        cpu: document.getElementById('p_cpu').value || null,
+        ram: document.getElementById('p_ram').value || null,
+        gpu: document.getElementById('p_gpu').value || null,
+        screen_size: document.getElementById('p_screenSize').value || null,
+        color: document.getElementById('p_color').value || null,
+        warranty: document.getElementById('p_warranty').value || null
       };
 
       Swal.showLoading();
@@ -3081,7 +3395,7 @@
       }
     }
 
-    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "", purchaseNo = "", supplier = "") {
+    function editProduct(id, date, name, brand, cost, actualPrice, stock, fbLink = "", purchaseNo = "", supplier = "", serialNumber = "", cpu = "", ram = "", gpu = "", screenSize = "", color = "", warranty = "") {
       document.getElementById('productPageTitle').innerText = "แก้ไขข้อมูลสินค้า (รหัส: " + id + ")";
       document.getElementById('p_id').value = id;
       // updated_at เป็น timestamp ISO จาก Supabase เช่น 2026-06-25T08:00:00.000Z
@@ -3101,6 +3415,13 @@
       document.getElementById('p_fbLink').value = fbLink && fbLink !== 'undefined' ? fbLink : "";
       if(document.getElementById('p_purchaseNo')) document.getElementById('p_purchaseNo').value = purchaseNo && purchaseNo !== 'undefined' ? purchaseNo : "";
       if(document.getElementById('p_supplier')) document.getElementById('p_supplier').value = supplier && supplier !== 'undefined' ? supplier : "";
+      document.getElementById('p_serialNumber').value = serialNumber && serialNumber !== 'undefined' ? serialNumber : "";
+      document.getElementById('p_cpu').value = cpu && cpu !== 'undefined' ? cpu : "";
+      document.getElementById('p_ram').value = ram && ram !== 'undefined' ? ram : "";
+      document.getElementById('p_gpu').value = gpu && gpu !== 'undefined' ? gpu : "";
+      document.getElementById('p_screenSize').value = screenSize && screenSize !== 'undefined' ? screenSize : "";
+      document.getElementById('p_color').value = color && color !== 'undefined' ? color : "";
+      document.getElementById('p_warranty').value = warranty && warranty !== 'undefined' ? warranty : "";
       document.getElementById('btnSaveProduct').className = "btn btn-primary w-100";
       document.getElementById('btnSaveProduct').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> อัปเดตข้อมูลสินค้า';
       document.getElementById('btnCancelEdit').classList.remove('d-none');
