@@ -2211,11 +2211,18 @@
       let prc = Number(document.getElementById('saleCustomPrice').value) || 0;
       let qty = Number(document.getElementById('saleQty').value) || 0;
       let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
-      let sub = prc * qty;
-      let vat = isVat ? sub * 0.07 : 0;
+      let grandTotal = prc * qty;
+      let sub, vat;
+      if (isVat) {
+        sub = grandTotal / 1.07;
+        vat = grandTotal - sub;
+      } else {
+        sub = grandTotal;
+        vat = 0;
+      }
       document.getElementById('saleSubTotal').value = sub.toFixed(2);
       document.getElementById('saleVat').value = vat.toFixed(2);
-      document.getElementById('saleGrandTotal').value = (sub + vat).toFixed(2);
+      document.getElementById('saleGrandTotal').value = grandTotal.toFixed(2);
       calcDepositRemaining();
     }
 
@@ -2254,13 +2261,20 @@
       if (qty > product.stock) { Swal.fire('เตือน', 'สินค้าคงเหลือไม่พอขาย!', 'warning'); return; }
 
       let customPrice = Number(document.getElementById('saleCustomPrice').value);
-      let subTotal = customPrice * qty;
       let totalCost = product.cost * qty;
       let shippingCost = Number(document.getElementById('saleShippingCost').value) || 0;
-      let profit = subTotal - totalCost - shippingCost;
       let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
-      let vat = isVat ? subTotal * 0.07 : 0;
-      let totalSales = subTotal + vat;
+      let grandTotalCalc = customPrice * qty;
+      let subTotal, vat;
+      if (isVat) {
+        subTotal = grandTotalCalc / 1.07;
+        vat = grandTotalCalc - subTotal;
+      } else {
+        subTotal = grandTotalCalc;
+        vat = 0;
+      }
+      let totalSales = grandTotalCalc;
+      let profit = subTotal - totalCost - shippingCost;
 
       let receiptId = "INV-" + Date.now();
 
@@ -2858,6 +2872,8 @@
       document.getElementById('invTerm').innerText = document.getElementById('qtPaymentTerm').value;
       document.getElementById('invCusName').innerText = document.getElementById('qtCusName').value || 'ลูกค้าทั่วไป';
       document.getElementById('invCusAddress').innerText = document.getElementById('qtCusAddress').value || '-';
+      document.getElementById('invCusTaxId').innerText = document.getElementById('qtCusTaxId').value || '-';
+      document.getElementById('invCusPhone').innerText = document.getElementById('qtCusPhone').value || '-';
 
       let rows = document.querySelectorAll('#qtTableBody tr');
       let html = '', subTotal = 0;
@@ -2872,13 +2888,20 @@
 
       let docType = document.getElementById('qtDocType').value;
       let isNoVat = docType.includes('CASH RECEIPT') || docType.includes('NO VAT');
-      let vat = isNoVat ? 0 : subTotal * 0.07;
-      let grandTotal = subTotal + vat;
+      let grandTotal = subTotal;
+      let vatBase, vat;
+      if (isNoVat) {
+        vatBase = subTotal;
+        vat = 0;
+      } else {
+        vatBase = subTotal / 1.07;
+        vat = subTotal - vatBase;
+      }
 
       document.getElementById('invItemsBody').innerHTML = html;
-      document.getElementById('invSubTotal').innerText = "฿" + subTotal.toLocaleString();
-      document.getElementById('invVat').innerText = isNoVat ? "-" : "฿" + vat.toLocaleString();
-      document.getElementById('invGrandTotal').innerText = "฿" + grandTotal.toLocaleString();
+      document.getElementById('invSubTotal').innerText = "฿" + vatBase.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('invVat').innerText = isNoVat ? "-" : "฿" + vat.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('invGrandTotal').innerText = "฿" + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
       document.getElementById('printInvoiceSection').classList.remove('d-none');
       window.print();
