@@ -794,8 +794,9 @@
             </div>
 
             <div class="tab-pane fade" id="tab-history">
-              <div class="mb-3 d-flex gap-2">
+              <div class="mb-3 d-flex gap-2 flex-wrap">
                 <button class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="deleteSelectedSales()"><i class="fa-solid fa-trash"></i> ลบรายการที่เลือก</button>
+                <button class="btn btn-sm btn-info fw-bold shadow-sm text-white" onclick="printSelectedBills()"><i class="fa-solid fa-print"></i> พิมพ์บิลที่เลือก</button>
                 <span class="text-muted small align-self-center" id="selectedCount"></span>
               </div>
               <div class="table-responsive">
@@ -1289,6 +1290,10 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="printBatchInvoiceSection" class="print-wrapper-box d-none" style="padding: 0; background:#fff; color:#000;">
+      <div id="batchInvoiceContainer"></div>
     </div>
 
     <div id="printTxReportSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
@@ -2906,6 +2911,112 @@
       document.getElementById('printInvoiceSection').classList.remove('d-none');
       window.print();
       setTimeout(() => { document.getElementById('printInvoiceSection').classList.add('d-none'); }, 1000);
+    }
+
+    function printSelectedBills() {
+      let checkboxes = document.querySelectorAll('.sale-checkbox:checked');
+      if (checkboxes.length === 0) {
+        Swal.fire('เตือน', 'กรุณาเลือกรายการที่ต้องการพิมพ์บิลก่อน', 'warning');
+        return;
+      }
+
+      // รวบรวม receiptId ที่เลือกทั้งหมด
+      let selectedIds = new Set();
+      checkboxes.forEach(cb => selectedIds.add(cb.dataset.id));
+
+      // หา sale data จาก globalSales
+      let selectedSales = globalSales.filter(s => selectedIds.has(s.receiptId));
+
+      if (selectedSales.length === 0) {
+        Swal.fire('เตือน', 'ไม่พบข้อมูลบิลที่เลือก', 'warning');
+        return;
+      }
+
+      // สร้าง HTML สำหรับทุกบิล
+      let batchHtml = '';
+      let docType = 'บิลเงินสด / CASH RECEIPT';
+      let today = new Date();
+      let printDate = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+      selectedSales.forEach((sale, idx) => {
+        let unitPrice = sale.qty > 0 ? sale.subTotal / sale.qty : 0;
+        let subTotal = sale.subTotal;
+        let isNoVat = true; // default batch print as CASH RECEIPT (no VAT)
+        let vatBase = subTotal;
+        let vat = 0;
+        let grandTotal = subTotal;
+
+        // ใช้วันที่จากบิล
+        let invoiceDate = sale.date || printDate;
+
+        let pageBreak = idx < selectedSales.length - 1 ? 'page-break-after: always;' : '';
+
+        batchHtml += `
+          <div class="invoice-box" style="max-width: 800px; margin: 0 auto; padding: 20px; ${pageBreak}">
+            <div class="row mb-4">
+              <div class="col-7 text-start">
+                <h4 class="fw-bold m-0" style="color:#0f172a;">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
+                <p class="small m-0">ทะเบียนนิติบุคคลเลขที่ 0413569001497 (สำนักงานใหญ่)<br>ที่อยู่: 119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี ปณ.41000<br>โทรศัพท์: 0908422774</p>
+              </div>
+              <div class="col-5 text-end">
+                <h3 class="fw-bold m-0" style="color:#f97316;">${docType}</h3>
+                <p class="m-0 mt-2"><strong>เลขที่เอกสาร:</strong> ${sale.receiptId}</p>
+                <p class="m-0"><strong>วันที่ออกบิล:</strong> ${invoiceDate}</p>
+                <p class="m-0"><strong>เงื่อนไขชำระเงิน:</strong> ${sale.paymentMethod === 'CASH' ? 'เงินสด / โอนเงิน' : sale.paymentMethod === 'COD' ? 'เก็บเงินปลายทาง (COD)' : 'มัดจำ'}</p>
+              </div>
+            </div>
+            <div class="p-3 border rounded mb-4 bg-light" style="font-size:0.95rem;">
+              <strong>ข้อมูลลูกค้า / Customer Details :</strong><br>
+              <div class="mt-1"><strong>ชื่อ:</strong> ${sale.cusName || 'ลูกค้าทั่วไป'}</div>
+              <div><strong>ที่อยู่จัดส่ง / สาขา:</strong> ${sale.address || '-'}</div>
+            </div>
+            <table class="table table-bordered align-middle text-center" style="font-size:0.95rem;">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:8%;">ลำดับ</th>
+                  <th>รายการสินค้า / รายละเอียดการขาย</th>
+                  <th style="width:12%;">จำนวน</th>
+                  <th style="width:15%;">ราคาต่อหน่วย</th>
+                  <th style="width:18%;">จำนวนเงิน (บาท)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td class="text-start">${sale.productName}</td>
+                  <td>${sale.qty}</td>
+                  <td>฿${unitPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+                  <td>฿${subTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="row justify-content-end text-end mt-3" style="font-size:0.95rem;">
+              <div class="col-md-5">
+                <div class="row py-1">
+                  <div class="col-7 text-muted">รวมเงิน:</div>
+                  <div class="col-5 fw-bold">฿${vatBase.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+                <div class="row py-1 border-top mt-2 pt-2">
+                  <div class="col-7 fw-bold" style="color:#0d6efd; font-size:1.05rem;">ยอดรวมทั้งสิ้นสุทธิ (Grand Total):</div>
+                  <div class="col-5 fw-bold" style="color:#0d6efd; font-size:1.05rem; border-bottom: 3px double #0d6efd;">฿${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #cbd5e1;">
+              <div class="col-4"><br><br>...................................................<br>ผู้รับเงิน / สินค้า</div>
+              <div class="col-4"></div>
+              <div class="col-4"><br><br>...................................................<br>ผู้รับมอบอำนาจ / ผู้จัดการ</div>
+            </div>
+          </div>`;
+      });
+
+      document.getElementById('batchInvoiceContainer').innerHTML = batchHtml;
+      document.getElementById('printBatchInvoiceSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => {
+        document.getElementById('printBatchInvoiceSection').classList.add('d-none');
+        document.getElementById('batchInvoiceContainer').innerHTML = '';
+      }, 1000);
     }
 
     function getAllTransactions() {
