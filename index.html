@@ -284,6 +284,122 @@
       margin: 0 auto;
       max-width: 850px;
     }
+
+    /* === Customer/Supplier Name Search Autocomplete === */
+    .search-autocomplete-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    .search-autocomplete-wrapper .search-input-styled {
+      padding-left: 2.2rem;
+      border-radius: 0.6rem;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+    .search-autocomplete-wrapper .search-input-styled:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+      outline: none;
+    }
+    .search-autocomplete-wrapper .search-icon {
+      position: absolute;
+      left: 0.7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 0.85rem;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .search-autocomplete-wrapper .search-clear-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      border-radius: 50%;
+      transition: all 0.2s;
+      z-index: 2;
+      display: none;
+    }
+    .search-autocomplete-wrapper .search-clear-btn:hover {
+      color: #ef4444;
+      background: #fee2e2;
+    }
+    .search-autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 0.6rem 0.6rem;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 1050;
+      display: none;
+    }
+    .search-autocomplete-dropdown.show {
+      display: block;
+      animation: acSlideDown 0.2s ease;
+    }
+    @keyframes acSlideDown {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .search-autocomplete-dropdown .dropdown-item-custom {
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-autocomplete-dropdown .dropdown-item-custom:last-child {
+      border-bottom: none;
+    }
+    .search-autocomplete-dropdown .dropdown-item-custom:hover,
+    .search-autocomplete-dropdown .dropdown-item-custom.active {
+      background: linear-gradient(135deg, #fff7ed, #fef3c7);
+      color: #c2410c;
+    }
+    .search-autocomplete-dropdown .dropdown-item-custom .match-highlight {
+      background: #fde68a;
+      padding: 0 2px;
+      border-radius: 2px;
+      font-weight: 600;
+    }
+    .search-autocomplete-dropdown .dropdown-item-custom .item-icon {
+      color: var(--orange);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .search-autocomplete-dropdown .no-results {
+      padding: 12px 14px;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      text-align: center;
+    }
+    .search-result-count {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .search-result-count strong {
+      color: var(--orange);
+    }
   </style>
 </head>
 
@@ -617,6 +733,15 @@
                 <option value="out_of_stock">หมดสต็อก (0)</option>
               </select>
             </div>
+            <div class="col-md-3">
+              <div class="search-autocomplete-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" class="form-control form-control-sm search-input-styled" id="searchSupplierProducts" placeholder="ค้นหาชื่อผู้ขาย / ซื้อจาก..." autocomplete="off" oninput="onSearchSupplier(this)" onfocus="onSearchSupplier(this)">
+                <button class="search-clear-btn" id="clearSupplierProducts" onclick="clearSupplierSearch()" title="ล้างการค้นหา"><i class="fa-solid fa-xmark"></i></button>
+                <div class="search-autocomplete-dropdown" id="dropdownSupplierProducts"></div>
+              </div>
+              <div class="search-result-count" id="searchResultCountProducts"></div>
+            </div>
           </div>
           <table class="table table-hover align-middle text-center">
             <thead class="table-light">
@@ -794,10 +919,19 @@
             </div>
 
             <div class="tab-pane fade" id="tab-history">
-              <div class="mb-3 d-flex gap-2 flex-wrap">
+              <div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
                 <button class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="deleteSelectedSales()"><i class="fa-solid fa-trash"></i> ลบรายการที่เลือก</button>
                 <button class="btn btn-sm btn-info fw-bold shadow-sm text-white" onclick="printSelectedBills()"><i class="fa-solid fa-print"></i> พิมพ์บิลที่เลือก</button>
                 <span class="text-muted small align-self-center" id="selectedCount"></span>
+                <div class="ms-auto" style="min-width:260px; max-width:320px;">
+                  <div class="search-autocomplete-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" class="form-control form-control-sm search-input-styled" id="searchCusNameReport" placeholder="ค้นหาชื่อลูกค้า..." autocomplete="off" oninput="onSearchCusName(this, 'report')" onfocus="onSearchCusName(this, 'report')">
+                    <button class="search-clear-btn" id="clearCusNameReport" onclick="clearCusNameSearch('report')" title="ล้างการค้นหา"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="search-autocomplete-dropdown" id="dropdownCusNameReport"></div>
+                  </div>
+                  <div class="search-result-count" id="searchResultCountReport"></div>
+                </div>
               </div>
               <div class="table-responsive">
                 <table class="table table-hover align-middle text-center" style="font-size:0.9rem;">
@@ -2107,6 +2241,16 @@
         return nameA.localeCompare(nameB);
       });
 
+      // Filter by supplier name search
+      if (currentSupplierFilter) {
+        filteredProducts = filteredProducts.filter(p => p.supplier && p.supplier.toLowerCase().includes(currentSupplierFilter.toLowerCase()));
+        let resultEl = document.getElementById('searchResultCountProducts');
+        if (resultEl) resultEl.innerHTML = '\u0e1e\u0e1a <strong>' + filteredProducts.length + '</strong> \u0e23\u0e32\u0e22\u0e01\u0e32\u0e23';
+      } else {
+        let resultEl = document.getElementById('searchResultCountProducts');
+        if (resultEl) resultEl.innerHTML = '';
+      }
+
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
@@ -2386,6 +2530,17 @@
           let idB = b.receiptId || '';
           return idB.localeCompare(idA);
         });
+
+      // Filter by customer name search
+      if (currentCusNameFilter) {
+        sortedSales = sortedSales.filter(s => s.cusName && s.cusName.toLowerCase().includes(currentCusNameFilter.toLowerCase()));
+        let resultEl = document.getElementById('searchResultCountReport');
+        if (resultEl) resultEl.innerHTML = 'พบ <strong>' + sortedSales.length + '</strong> รายการ';
+      } else {
+        let resultEl = document.getElementById('searchResultCountReport');
+        if (resultEl) resultEl.innerHTML = '';
+      }
+
 
       sortedSales.forEach(s => {
         // สำหรับรายการมัดจำที่ชำระครบแล้ว ใช้ completedDate นับยอดขายเดือนที่ได้รับเงินจริง
@@ -3839,6 +3994,177 @@
       }
       refreshAllData();
     };
+
+  
+
+    // ====== Customer Name Search Autocomplete ======
+    let currentCusNameFilter = '';
+    let currentSupplierFilter = '';
+
+    function highlightMatch(text, query) {
+      if (!query) return text;
+      let idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx === -1) return text;
+      return text.substring(0, idx) + '<span class="match-highlight">' + text.substring(idx, idx + query.length) + '</span>' + text.substring(idx + query.length);
+    }
+
+    function getUniqueCusNames() {
+      let names = new Set();
+      globalSales.forEach(s => {
+        if (s.cusName && s.cusName !== '-' && s.cusName.trim() !== '') {
+          names.add(s.cusName.trim());
+        }
+      });
+      return [...names].sort();
+    }
+
+    function getUniqueSuppliers() {
+      let names = new Set();
+      globalProducts.forEach(p => {
+        if (p.supplier && p.supplier !== '-' && p.supplier.trim() !== '' && p.supplier !== 'null' && p.supplier !== 'undefined') {
+          names.add(p.supplier.trim());
+        }
+      });
+      return [...names].sort();
+    }
+
+    function onSearchCusName(inputEl, context) {
+      let query = inputEl.value.trim();
+      let dropdown = document.getElementById('dropdownCusNameReport');
+      let clearBtn = document.getElementById('clearCusNameReport');
+
+      clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+      let allNames = getUniqueCusNames();
+      let filtered = query.length > 0
+        ? allNames.filter(n => n.toLowerCase().includes(query.toLowerCase()))
+        : allNames;
+
+      if (filtered.length === 0 && query.length > 0) {
+        dropdown.innerHTML = '<div class="no-results"><i class="fa-solid fa-circle-exclamation me-1"></i> ไม่พบลูกค้าที่ค้นหา</div>';
+        dropdown.classList.add('show');
+      } else if (filtered.length > 0) {
+        dropdown.innerHTML = filtered.map(name =>
+          '<div class="dropdown-item-custom" onclick="selectCusName(\'' + name.replace(/'/g, "\\'") + '\')">' +
+          '<i class="fa-solid fa-user item-icon"></i>' +
+          '<span>' + highlightMatch(name, query) + '</span>' +
+          '</div>'
+        ).join('');
+        dropdown.classList.add('show');
+      } else {
+        dropdown.classList.remove('show');
+      }
+
+      // Apply filter in real-time as user types
+      currentCusNameFilter = query;
+      renderReportsTab();
+    }
+
+    function selectCusName(name) {
+      let input = document.getElementById('searchCusNameReport');
+      input.value = name;
+      currentCusNameFilter = name;
+      document.getElementById('dropdownCusNameReport').classList.remove('show');
+      document.getElementById('clearCusNameReport').style.display = 'block';
+      renderReportsTab();
+    }
+
+    function clearCusNameSearch(context) {
+      let input = document.getElementById('searchCusNameReport');
+      input.value = '';
+      currentCusNameFilter = '';
+      document.getElementById('dropdownCusNameReport').classList.remove('show');
+      document.getElementById('clearCusNameReport').style.display = 'none';
+      document.getElementById('searchResultCountReport').innerHTML = '';
+      renderReportsTab();
+    }
+
+    function onSearchSupplier(inputEl) {
+      let query = inputEl.value.trim();
+      let dropdown = document.getElementById('dropdownSupplierProducts');
+      let clearBtn = document.getElementById('clearSupplierProducts');
+
+      clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+      let allNames = getUniqueSuppliers();
+      let filtered = query.length > 0
+        ? allNames.filter(n => n.toLowerCase().includes(query.toLowerCase()))
+        : allNames;
+
+      if (filtered.length === 0 && query.length > 0) {
+        dropdown.innerHTML = '<div class="no-results"><i class="fa-solid fa-circle-exclamation me-1"></i> ไม่พบผู้ขายที่ค้นหา</div>';
+        dropdown.classList.add('show');
+      } else if (filtered.length > 0) {
+        dropdown.innerHTML = filtered.map(name =>
+          '<div class="dropdown-item-custom" onclick="selectSupplier(\'' + name.replace(/'/g, "\\'") + '\')">' +
+          '<i class="fa-solid fa-store item-icon"></i>' +
+          '<span>' + highlightMatch(name, query) + '</span>' +
+          '</div>'
+        ).join('');
+        dropdown.classList.add('show');
+      } else {
+        dropdown.classList.remove('show');
+      }
+
+      currentSupplierFilter = query;
+      renderManageProducts();
+    }
+
+    function selectSupplier(name) {
+      let input = document.getElementById('searchSupplierProducts');
+      input.value = name;
+      currentSupplierFilter = name;
+      document.getElementById('dropdownSupplierProducts').classList.remove('show');
+      document.getElementById('clearSupplierProducts').style.display = 'block';
+      renderManageProducts();
+    }
+
+    function clearSupplierSearch() {
+      let input = document.getElementById('searchSupplierProducts');
+      input.value = '';
+      currentSupplierFilter = '';
+      document.getElementById('dropdownSupplierProducts').classList.remove('show');
+      document.getElementById('clearSupplierProducts').style.display = 'none';
+      document.getElementById('searchResultCountProducts').innerHTML = '';
+      renderManageProducts();
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.search-autocomplete-wrapper')) {
+        document.querySelectorAll('.search-autocomplete-dropdown').forEach(d => d.classList.remove('show'));
+      }
+    });
+
+    // Keyboard navigation for dropdowns
+    document.addEventListener('keydown', function(e) {
+      let activeDropdown = document.querySelector('.search-autocomplete-dropdown.show');
+      if (!activeDropdown) return;
+      let items = activeDropdown.querySelectorAll('.dropdown-item-custom');
+      if (items.length === 0) return;
+      let activeItem = activeDropdown.querySelector('.dropdown-item-custom.active');
+      let idx = -1;
+      if (activeItem) {
+        idx = Array.from(items).indexOf(activeItem);
+        activeItem.classList.remove('active');
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        idx = (idx + 1) % items.length;
+        items[idx].classList.add('active');
+        items[idx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        idx = idx <= 0 ? items.length - 1 : idx - 1;
+        items[idx].classList.add('active');
+        items[idx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' && idx >= 0) {
+        e.preventDefault();
+        items[idx].click();
+      } else if (e.key === 'Escape') {
+        activeDropdown.classList.remove('show');
+      }
+    });
 
   </script>
 </body>
