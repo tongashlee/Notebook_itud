@@ -743,9 +743,16 @@
               <div class="search-result-count" id="searchResultCountProducts"></div>
             </div>
           </div>
+          <div class="row mb-2">
+            <div class="col-12 text-end">
+              <button class="btn btn-sm btn-outline-primary" onclick="printSelectedProducts()"><i class="fa-solid fa-print"></i> พิมพ์รายการที่เลือก</button>
+              <button class="btn btn-sm btn-primary" onclick="printAllProducts()"><i class="fa-solid fa-print"></i> พิมพ์ทั้งหมด</button>
+            </div>
+          </div>
           <table class="table table-hover align-middle text-center">
             <thead class="table-light">
               <tr>
+                <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllProducts" onclick="toggleSelectAllProducts(this)"></th>
                 <th>เลขที่ซื้อเข้า</th>
                 <th>วันที่ลงรายการ</th>
                 <th>ชื่อสินค้า</th>
@@ -1762,6 +1769,47 @@
         <div class="text-center mt-4 small text-muted">เอกสารออกโดยระบบจัดการคลังสินค้า หจก. โน๊ตบุ๊ค ไอทีอุดร — พิมพ์อัตโนมัติ</div>
       </div>
     </div>
+
+    <!-- Print Selected Products Layout -->
+    <div id="printSelectedProductsSection" class="print-wrapper-box d-none" style="padding: 20px; background:#fff; color:#000;">
+      <div class="invoice-box">
+        <div class="row mb-4 pb-3" style="border-bottom: 3px solid #f97316;">
+          <div class="col-7 text-start">
+            <h4 class="fw-bold m-0" style="color:#0f172a;">ห้างหุ้นส่วนจำกัด โน๊ตบุ๊ค ไอทีอุดร</h4>
+            <p class="small m-0">ทะเบียนนิติบุคคลเลขที่ 0413569001497 (สำนักงานใหญ่)<br>ที่อยู่: 119/138 มบ.พีเคธานี 4 ม.5 ถ.อุดรธานี-หนองคาย ต.หมู่ม่น อ.เมือง จ.อุดรธานี ปณ.41000<br>โทรศัพท์: 0908422774</p>
+          </div>
+          <div class="col-5 text-end">
+            <h3 class="fw-bold m-0" style="color:#f97316;"><i class="fa-solid fa-boxes-stacked"></i> รายการสินค้าคลังที่เลือก</h3>
+            <p class="m-0 mt-2"><strong>วันที่พิมพ์:</strong> <span id="psPrintDate"></span></p>
+          </div>
+        </div>
+
+        <table class="table table-bordered align-middle text-center" style="font-size: 0.95rem;" id="psProductsTable">
+          <thead style="background:#0f172a; color:#fff;">
+            <tr>
+              <th>เลขที่ซื้อเข้า</th>
+              <th>วันที่ลงรายการ</th>
+              <th>ชื่อสินค้า / รุ่น</th>
+              <th>ซื้อจาก</th>
+              <th>ยี่ห้อ</th>
+              <th>S/N</th>
+              <th>ทุน</th>
+              <th>ขาย</th>
+              <th>คงเหลือ</th>
+            </tr>
+          </thead>
+          <tbody id="psProductsTableBody">
+          </tbody>
+        </table>
+
+        <div class="row mt-5 text-center small pt-4" style="border-top: 1px dashed #cbd5e1;">
+          <div class="col-4"><br><br>...................................................<br>ผู้ตรวจสอบคลัง</div>
+          <div class="col-4"></div>
+          <div class="col-4"><br><br>...................................................<br>ผู้จัดการ / เจ้าของกิจการ</div>
+        </div>
+        <div class="text-center mt-4 small text-muted">เอกสารออกโดยระบบจัดการคลังสินค้า หจก. โน๊ตบุ๊ค ไอทีอุดร — พิมพ์อัตโนมัติ</div>
+      </div>
+    </div>
   </div>
 
   <script src="config.js?v=${new Date().getTime()}"></script>
@@ -2121,8 +2169,8 @@
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         // ตรวจสอบสถานะมัดจำและ COD จากข้อมูลการขาย
         let depositStatus = '';
-        let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
-        let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+        let pendingCodSales = globalSales.filter(s => String(s.productId) === String(p.id) && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+        let depositSales = globalSales.filter(s => String(s.productId) === String(p.id) && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
         
         if (pendingCodSales.length > 0) {
           let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
@@ -2164,8 +2212,8 @@
             totalValue += value;
             // ตรวจสอบสถานะ COD/มัดจำ
             let statusHtml = '';
-            let pendingCodSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
-            let depositSales = globalSales.filter(s => s.productId === p.id && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
+            let pendingCodSales = globalSales.filter(s => String(s.productId) === String(p.id) && s.paymentMethod === 'COD' && s.status === 'PENDING_COD');
+            let depositSales = globalSales.filter(s => String(s.productId) === String(p.id) && s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0);
             if (pendingCodSales.length > 0) {
               let totalCodQty = pendingCodSales.reduce((sum, s) => sum + Number(s.qty), 0);
               statusHtml += `<span class="badge bg-info text-dark mb-1"><i class="fa-solid fa-truck-fast"></i> รอ COD ${totalCodQty} เครื่อง</span><br>`;
@@ -2254,9 +2302,9 @@
       let html = filteredProducts.map(p => {
         let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
         let fbBtn = p.fbLink ? `<a href="${p.fbLink}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="ดูโพสต์บน Facebook"><i class="fa-brands fa-facebook-f"></i></a>` : '<span class="text-muted">-</span>';
-        return `<tr><td><span class="badge bg-dark" style="font-size:0.7rem;">${p.purchaseNo || '-'}</span></td><td>${dateStr}</td><td class="text-start">${p.name}</td><td class="text-muted small">${p.supplier || '-'}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}','${p.purchaseNo}','${p.supplier}','${p.serialNumber}','${p.cpu}','${p.ram}','${p.gpu}','${p.screenSize}','${p.color}','${p.warranty}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+        return `<tr><td><input type="checkbox" class="form-check-input product-checkbox" value="${p.id}"></td><td><span class="badge bg-dark" style="font-size:0.7rem;">${p.purchaseNo || '-'}</span></td><td>${dateStr}</td><td class="text-start">${p.name}</td><td class="text-muted small">${p.supplier || '-'}</td><td>${p.brand}</td><td>฿${p.cost.toLocaleString()}</td><td class="text-success">฿${p.actualPrice.toLocaleString()}</td><td><span class="fw-bold ${p.stock <= 0 ? 'text-danger' : 'text-dark'}">${p.stock}</span></td><td>${fbBtn}</td><td><button class="btn btn-sm btn-outline-warning me-1" onclick="editProduct('${p.id}','${p.updatedAt}','${p.name}','${p.brand}',${p.cost},${p.actualPrice},${p.stock},'${p.fbLink}','${p.purchaseNo}','${p.supplier}','${p.serialNumber}','${p.cpu}','${p.ram}','${p.gpu}','${p.screenSize}','${p.color}','${p.warranty}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-secondary" onclick="printProductDetail('${p.id}')" title="พิมพ์ข้อมูลสินค้า"><i class="fa-solid fa-print"></i></button><button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteProduct('${p.id}')" title="ลบสินค้า"><i class="fa-solid fa-trash"></i></button></td></tr>`;
       }).join('');
-      document.getElementById('productData').innerHTML = html || '<tr><td colspan="10" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
+      document.getElementById('productData').innerHTML = html || '<tr><td colspan="11" class="text-muted">ไม่มีสินค้าตามเงื่อนไขที่ค้นหา</td></tr>';
     }
 
     function printProductDetail(productId) {
@@ -2309,6 +2357,61 @@
       document.getElementById('printProductDetailSection').classList.remove('d-none');
       window.print();
       setTimeout(() => { document.getElementById('printProductDetailSection').classList.add('d-none'); }, 1000);
+    }
+
+    function toggleSelectAllProducts(el) {
+      let checkboxes = document.querySelectorAll('.product-checkbox');
+      checkboxes.forEach(cb => cb.checked = el.checked);
+    }
+
+    function printSelectedProducts() {
+      let selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.value);
+      if (selectedIds.length === 0) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการเพื่อพิมพ์', 'warning');
+        return;
+      }
+      executePrintSelected(selectedIds);
+    }
+
+    function printAllProducts() {
+      let allIds = Array.from(document.querySelectorAll('.product-checkbox')).map(cb => cb.value);
+      if (allIds.length === 0) {
+        Swal.fire('แจ้งเตือน', 'ไม่มีสินค้าที่จะพิมพ์', 'warning');
+        return;
+      }
+      executePrintSelected(allIds);
+    }
+
+    function executePrintSelected(ids) {
+      let today = new Date();
+      let printDate = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+      document.getElementById('psPrintDate').innerText = printDate;
+
+      let tbody = document.getElementById('psProductsTableBody');
+      tbody.innerHTML = '';
+      
+      let itemsToPrint = globalProducts.filter(p => ids.includes(String(p.id)));
+      
+      let html = '';
+      itemsToPrint.forEach(p => {
+        let dateStr = p.updatedAt ? formatDateToTH(p.updatedAt.split('T')[0]) : "-";
+        html += `<tr>
+          <td>${p.purchaseNo || '-'}</td>
+          <td>${dateStr}</td>
+          <td class="text-start">${p.name}</td>
+          <td class="text-muted small">${p.supplier || '-'}</td>
+          <td>${p.brand}</td>
+          <td>${p.serialNumber || '-'}</td>
+          <td>฿${p.cost.toLocaleString()}</td>
+          <td class="text-success fw-bold">฿${p.actualPrice.toLocaleString()}</td>
+          <td class="${p.stock <= 0 ? 'text-danger fw-bold' : ''}">${p.stock}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+
+      document.getElementById('printSelectedProductsSection').classList.remove('d-none');
+      window.print();
+      setTimeout(() => { document.getElementById('printSelectedProductsSection').classList.add('d-none'); }, 1000);
     }
 
     function renderSalesTab() {
@@ -3209,7 +3312,7 @@
       globalProducts.forEach(p => {
         let soldQty = 0;
         globalSales.forEach(s => {
-          if (s.productId === p.id) {
+          if (String(s.productId) === String(p.id)) {
             soldQty += Number(s.qty);
           }
         });
@@ -4169,3 +4272,5 @@
   </script>
 </body>
 </html>
+
+
