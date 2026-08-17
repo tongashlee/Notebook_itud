@@ -400,6 +400,53 @@
     .search-result-count strong {
       color: var(--orange);
     }
+
+    /* === Return/เทิร์น Styling === */
+    .table-return {
+      background: #f5f0ff !important;
+    }
+    .table-return td {
+      color: #7c3aed !important;
+    }
+    .badge-return {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+      color: #fff;
+      font-weight: 600;
+    }
+    .return-card {
+      border-left: 4px solid #8b5cf6;
+      background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+    }
+    .text-purple {
+      color: #7c3aed !important;
+    }
+    .border-purple {
+      border-color: #8b5cf6 !important;
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-purple:hover {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+    .btn-outline-purple {
+      border: 1.5px solid #8b5cf6;
+      color: #7c3aed;
+      background: transparent;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-outline-purple:hover {
+      background: #8b5cf6;
+      color: #fff;
+    }
   </style>
 </head>
 
@@ -515,6 +562,12 @@
             <div class="stat-card px-3 py-4 border-start border-danger border-4">
               <h6>ค่าขนส่งเดือนนี้</h6>
               <h3 class="text-danger" id="dashMonthlyShipping">฿0</h3><i class="fa-solid fa-truck bg-icon"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="stat-card px-3 py-4 border-start border-4" style="border-color: #8b5cf6 !important;">
+              <h6>เทิร์นสินค้าเดือนนี้</h6>
+              <h3 class="text-purple" id="dashMonthlyReturns">฿0 <small class="fs-6" id="dashReturnQty">(0 เครื่อง)</small></h3><i class="fa-solid fa-rotate-left bg-icon"></i>
             </div>
           </div>
         </div>
@@ -810,6 +863,33 @@
                   class="form-control" id="saleQty" required value="1" min="1" oninput="calcVAT()"></div>
               <div class="col-md-4"><label class="small fw-bold text-muted">ค่าขนส่ง (หักกำไร)</label><input type="number"
                   class="form-control text-danger fw-bold" id="saleShippingCost" value="0" min="0" step="0.01" placeholder="0.00" oninput="calcVAT()"></div>
+              <!-- Trade-in UI -->
+              <div class="col-12 mt-3">
+                <div class="form-check form-switch p-2 bg-light rounded border border-purple">
+                  <input class="form-check-input ms-2 me-2" type="checkbox" id="hasTradeIn" onchange="toggleTradeIn()">
+                  <label class="form-check-label fw-bold text-purple" for="hasTradeIn"> มีสินค้าเทิร์นหรือไม่? (รับเทิร์นเครื่องเก่าเป็นส่วนลด)</label>
+                </div>
+              </div>
+
+              <div class="col-12" id="tradeInBox" style="display:none;">
+                <div class="p-3 rounded" style="background-color:#faf5ff; border: 1px solid #c4b5fd;">
+                  <h6 class="fw-bold text-purple mb-3"><i class="fa-solid fa-laptop-medical"></i> รายละเอียดเครื่องเทิร์น</h6>
+                  <div class="row g-2">
+                    <div class="col-md-5">
+                      <label class="small fw-bold text-muted">ชื่อ/รุ่น เครื่องที่นำมาเทิร์น</label>
+                      <input type="text" class="form-control" id="tradeInName" placeholder="เช่น iPhone 13 Pro Max">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="small fw-bold text-muted">ยี่ห้อ (Brand)</label>
+                      <input type="text" class="form-control" id="tradeInBrand" placeholder="เช่น Apple">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="small fw-bold text-muted">ราคาตีเทิร์น (ส่วนลด)</label>
+                      <input type="number" class="form-control text-danger fw-bold" id="tradeInValue" value="0" min="0" step="0.01" oninput="calcVAT()">
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="col-md-4"><label class="small fw-bold text-muted">รวมเงิน (ก่อน VAT)</label><input type="text"
                   class="form-control bg-light" id="saleSubTotal" readonly value="0.00"></div>
               <div class="col-md-4">
@@ -825,6 +905,19 @@
               <div class="col-md-4"><label class="small fw-bold text-muted">ยอดรวมทั้งสิ้น (รวม VAT)</label><input
                   type="text" class="form-control bg-light text-primary fw-bold fs-5" id="saleGrandTotal" readonly
                   value="0.00"></div>
+              <div class="col-md-4 offset-md-8 mt-2" id="netTotalBox" style="display:none;">
+                <label class="small fw-bold text-danger">หักส่วนลดเทิร์นสินค้า</label>
+                <input type="text" class="form-control bg-light text-danger fw-bold" id="saleTradeInDisplay" readonly value="0.00">
+                <label class="small fw-bold text-success mt-2">ยอดสุทธิที่ต้องชำระ (Net)</label>
+                <input type="text" class="form-control bg-success-subtle text-success fw-bold fs-5" id="saleNetTotal" readonly value="0.00">
+              </div>
+              <div class="col-md-4 offset-md-8 mt-2" id="netTotalBox" style="display:none;">
+                <label class="small fw-bold text-danger">หักส่วนลดเทิร์นสินค้า</label>
+                <input type="text" class="form-control bg-light text-danger fw-bold" id="saleTradeInDisplay" readonly value="0.00">
+                <label class="small fw-bold text-success mt-2">ยอดสุทธิที่ต้องชำระ (Net)</label>
+                <input type="text" class="form-control bg-success-subtle text-success fw-bold fs-5" id="saleNetTotal" readonly value="0.00">
+              </div>
+
             </div>
             <hr>
             <div class="card p-3 mb-3 border-start border-warning border-4 bg-light">
@@ -860,7 +953,6 @@
                   </div>
                 </div>
               </div>
-              <!-- Info alert for stock deduction -->
               <div class="alert alert-info py-2 px-3 mt-3 mb-0 small" id="codAlert" style="display:none;">
                 <i class="fa-solid fa-truck-fast"></i> สินค้าจะถูกตัดสต็อกทันที สถานะออเดอร์: <strong>รอดำเนินการ (COD)</strong>
               </div>
@@ -875,6 +967,71 @@
             </div>
             <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5" id="btnSaveSale"><i
                 class="fa-solid fa-check-circle"></i> ยืนยันการขาย ตัดสต็อกทันที</button>
+          </form>
+        </div>
+
+        <!-- ========== คืนสินค้า / ยกเลิกบิล Section ========== -->
+        <div class="card p-4 mt-4 return-card shadow-sm">
+          <h5 class="fw-bold text-purple mb-3"><i class="fa-solid fa-rotate-left me-2"></i>คืนสินค้า / ยกเลิกบิล</h5>
+          <p class="text-muted small mb-3"><i class="fa-solid fa-circle-info text-purple"></i> เลือกบิลขายเดิมเพื่อทำการเทิร์น — ระบบจะคืนสต็อกและหักยอดขาย/กำไรโดยอัตโนมัติ</p>
+          <form id="formReturn" onsubmit="submitReturn(event)">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="small fw-bold text-muted">วันที่เทิร์น</label>
+                <input type="date" class="form-control" id="returnDate" required>
+              </div>
+              <div class="col-md-8">
+                <label class="small fw-bold text-muted">เลือกบิลขายที่ต้องการเทิร์น</label>
+                <select class="form-select" id="returnInvoice" required onchange="onReturnInvoiceChange()">
+                  <option value="">-- เลือกบิลขายที่ต้องการเทิร์นสินค้า --</option>
+                </select>
+              </div>
+            </div>
+            <div id="returnDetailBox" style="display:none;">
+              <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                  <label class="small fw-bold text-muted">สินค้า</label>
+                  <input type="text" class="form-control bg-light" id="returnProductName" readonly>
+                </div>
+                <div class="col-md-2">
+                  <label class="small fw-bold text-muted">ราคาขาย/ชิ้น</label>
+                  <input type="text" class="form-control bg-light text-primary fw-bold" id="returnPricePerUnit" readonly>
+                </div>
+                <div class="col-md-2">
+                  <label class="small fw-bold text-muted">ขายไป (ชิ้น)</label>
+                  <input type="text" class="form-control bg-light" id="returnOrigQty" readonly>
+                </div>
+                <div class="col-md-2">
+                  <label class="small fw-bold text-muted">จำนวนที่เทิร์น</label>
+                  <input type="number" class="form-control fw-bold text-purple" id="returnQty" required min="1" value="1" oninput="calcReturnAmount()">
+                </div>
+                <div class="col-md-3">
+                  <label class="small fw-bold text-muted">ยอดคืนเงิน</label>
+                  <input type="text" class="form-control bg-light text-danger fw-bold fs-5" id="returnRefundAmount" readonly>
+                </div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="small fw-bold text-muted">เหตุผลการเทิร์น</label>
+                  <select class="form-select" id="returnReasonSelect" onchange="onReturnReasonChange()">
+                    <option value="สินค้ามีปัญหา/ชำรุด">สินค้ามีปัญหา/ชำรุด</option>
+                    <option value="ลูกค้าเปลี่ยนใจ">ลูกค้าเปลี่ยนใจ</option>
+                    <option value="สินค้าไม่ตรงตามสั่ง">สินค้าไม่ตรงตามสั่ง</option>
+                    <option value="เปลี่ยนรุ่น/อัพเกรด">เปลี่ยนรุ่น/อัพเกรด</option>
+                    <option value="other">อื่นๆ (ระบุเอง)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="small fw-bold text-muted">รายละเอียดเพิ่มเติม</label>
+                  <input type="text" class="form-control" id="returnReasonText" placeholder="ระบุรายละเอียด (ถ้ามี)">
+                </div>
+              </div>
+              <div class="alert alert-warning py-2 small mb-3">
+                <i class="fa-solid fa-triangle-exclamation"></i> <strong>หมายเหตุ:</strong> เมื่อยืนยันเทิร์น สต็อกสินค้าจะถูกเพิ่มกลับ และยอดขาย/กำไรจะถูกหักออกจากระบบอัตโนมัติ
+              </div>
+            </div>
+            <button type="submit" class="btn btn-purple w-100 py-3 fs-5" id="btnSubmitReturn" style="display:none;"><i
+                class="fa-solid fa-rotate-left me-2"></i> ยืนยันเทิร์นสินค้า คืนสต็อกทันที</button>
           </form>
         </div>
       </div>
@@ -1947,6 +2104,7 @@
       let targetYear = filterParts[0];
 
       let mSales = 0, mProfit = 0, ySales = 0, totalStock = 0, invValue = 0;
+      let mReturnTotal = 0, mReturnQty = 0;
       let mQty = 0, mShipping = 0;
       let brandSales = {};
       let recentHtml = '', lowStockHtml = '';
@@ -1998,6 +2156,11 @@
           mQty += Number(s.qty);
           mShipping += Number(s.shippingCost || 0);
 
+          if (s.status === 'RETURNED') {
+            mReturnTotal += Math.abs(Number(s.totalSales));
+            mReturnQty += Math.abs(Number(s.qty));
+          }
+
           let brand = getBrandByPid(s.productId);
           brandSales[brand] = (brandSales[brand] || 0) + s.qty;
         }
@@ -2041,6 +2204,7 @@
       document.getElementById('dashCodPending').innerText = "฿" + codPending.toLocaleString();
       document.getElementById('dashDepositPending').innerText = "฿" + depositPending.toLocaleString();
       document.getElementById('dashMonthlyShipping').innerText = "฿" + mShipping.toLocaleString();
+      document.getElementById('dashMonthlyReturns').innerHTML = "฿" + mReturnTotal.toLocaleString() + ` <small class="fs-6" id="dashReturnQty">(${mReturnQty} เครื่อง)</small>`;
 
       if (lowStockCount > 0) {
         if (lowStockCount === 10) lowStockHtml += `<tr><td colspan="2" class="text-center text-muted small py-2">...มีสินค้าอื่นใกล้หมดอีก</td></tr>`;
@@ -2230,15 +2394,6 @@
       }
       document.getElementById('inStockSummaryData').innerHTML = html;
     }
-
-      // เรียงจากใหม่ไปเก่า และตัดรายการที่ถูกยกเลิก/ตีกลับออก
-      let sortedSales = [...globalSales].filter(s => s.status !== 'CANCELLED').sort((a, b) => {
-        let dateA = new Date(a.createdAt).getTime();
-        let dateB = new Date(b.createdAt).getTime();
-        if (isNaN(dateA)) dateA = 0;
-        if (isNaN(dateB)) dateB = 0;
-        return dateB - dateA;
-      });
 
     function renderManageProducts() {
       let dateFilterEl = document.getElementById('manageDateFilter');
@@ -2437,6 +2592,7 @@
         }
       };
       filterStock();
+      renderReturnInvoices();
     }
 
     function filterStock() {
@@ -2501,7 +2657,55 @@
       document.getElementById('depositRemaining').value = remaining.toFixed(2);
     }
 
-    async function submitSale(e) {
+// ==================== Trade-in Sale Functions ====================
+function toggleTradeIn() {
+    let hasTradeIn = document.getElementById('hasTradeIn').checked;
+    document.getElementById('tradeInBox').style.display = hasTradeIn ? 'block' : 'none';
+    document.getElementById('netTotalBox').style.display = hasTradeIn ? 'block' : 'none';
+    if (!hasTradeIn) {
+        document.getElementById('tradeInName').value = '';
+        document.getElementById('tradeInBrand').value = '';
+        document.getElementById('tradeInValue').value = 0;
+    }
+    calcVAT();
+}
+
+const originalCalcVAT = calcVAT;
+calcVAT = function() {
+    let productOpt = document.getElementById('saleProduct').options[document.getElementById('saleProduct').selectedIndex];
+    if (!productOpt || productOpt.value === "") return;
+    let product = JSON.parse(decodeURIComponent(productOpt.getAttribute('data-product')));
+    let qty = Number(document.getElementById('saleQty').value);
+    let customPrice = Number(document.getElementById('saleCustomPrice').value);
+    
+    let isVat = document.getElementById('isVatEnabled') ? document.getElementById('isVatEnabled').checked : true;
+    let grandTotalCalc = customPrice * qty;
+    let subTotal, vat;
+    if (isVat) {
+        subTotal = grandTotalCalc / 1.07;
+        vat = grandTotalCalc - subTotal;
+    } else {
+        subTotal = grandTotalCalc;
+        vat = 0;
+    }
+    let totalSales = grandTotalCalc;
+
+    document.getElementById('saleSubTotal').value = subTotal.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById('saleVat').value = vat.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById('saleGrandTotal').value = totalSales.toLocaleString(undefined, {maximumFractionDigits: 2});
+
+    let hasTradeIn = document.getElementById('hasTradeIn') && document.getElementById('hasTradeIn').checked;
+    let tradeInValue = hasTradeIn ? Number(document.getElementById('tradeInValue').value) || 0 : 0;
+    let netTotal = totalSales - tradeInValue;
+
+    if (document.getElementById('saleTradeInDisplay')) {
+        document.getElementById('saleTradeInDisplay').value = tradeInValue.toLocaleString(undefined, {maximumFractionDigits: 2});
+        document.getElementById('saleNetTotal').value = netTotal.toLocaleString(undefined, {maximumFractionDigits: 2});
+    }
+
+    document.getElementById('salePayAmount').value = netTotal > 0 ? netTotal : 0;
+};
+async function submitSale(e) {
       e.preventDefault();
 
       let pId = document.getElementById('saleProduct').value;
@@ -2527,6 +2731,17 @@
       }
       let totalSales = grandTotalCalc;
       let profit = subTotal - totalCost - shippingCost;
+      // --- Trade-in Logic ---
+      let hasTradeIn = document.getElementById('hasTradeIn') && document.getElementById('hasTradeIn').checked;
+      let tradeInValue = 0;
+      let newProductId = null;
+      let tradeInName = '';
+      let tradeInBrand = '-';
+      if (hasTradeIn) {
+          tradeInValue = Number(document.getElementById('tradeInValue').value) || 0;
+          tradeInName = document.getElementById('tradeInName').value.trim() || 'สินค้ารับเทิร์น';
+          tradeInBrand = document.getElementById('tradeInBrand').value.trim() || '-';
+      }
 
       let receiptId = "INV-" + Date.now();
 
@@ -2573,6 +2788,25 @@
       Swal.showLoading();
 
       try {
+        if (hasTradeIn) {
+            newProductId = 'PROD-T' + Date.now() + Math.floor(Math.random()*1000);
+            let tradeInProdData = {
+                id: newProductId,
+                name: '[เทิร์น] ' + tradeInName,
+                brand: tradeInBrand,
+                cost: tradeInValue,
+                actual_price: tradeInValue,
+                stock: 1,
+                updated_at: new Date().toISOString(),
+                supplier: 'ลูกค้านำมาเทิร์น',
+                purchase_no: 'PO-T' + Date.now()
+            };
+            
+            globalProducts.push(tradeInProdData);
+            const { error: tradeInErr } = await supabaseClient.from('products').insert([tradeInProdData]);
+            if (tradeInErr) throw tradeInErr;
+        }
+
         // 1. บันทึกการขาย
         const { error: saleErr } = await supabaseClient.from('sales').insert([saleData]);
         if (saleErr) throw saleErr;
@@ -2612,11 +2846,315 @@
           `ที่อยู่: ${saleData.address}`;
         sendLineNotify(lineMsg);
       } catch (error) {
-        console.error(error);
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการขายได้', 'error');
+        console.error("submitSale Error:", error);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการขายได้: ' + (error.message || JSON.stringify(error)), 'error');
       }
     }
 
+
+    // ==================== เทิร์นสินค้า Functions ====================
+
+    function renderReturnInvoices() {
+      let selectHtml = '<option value="">-- เลือกบิลขายที่ต้องการเทิร์นสินค้า --</option>';
+      let completedSales = globalSales.filter(s => s.status === 'COMPLETED' && !s.receiptId.startsWith('RTN-'));
+      completedSales.sort((a, b) => {
+        let tA = new Date(a.createdAt).getTime();
+        let tB = new Date(b.createdAt).getTime();
+        if (isNaN(tA)) tA = 0;
+        if (isNaN(tB)) tB = 0;
+        return tB - tA;
+      });
+      completedSales.forEach(s => {
+        let saleJson = JSON.stringify(s).replace(/'/g, "&#39;");
+        selectHtml += `<option value="${s.receiptId}" data-sale='${saleJson}'>${s.receiptId} | ${s.productName} | ${s.date} | ฿${Number(s.totalSales).toLocaleString()} | ${s.cusName}</option>`;
+      });
+      document.getElementById('returnInvoice').innerHTML = selectHtml;
+      document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    function onReturnInvoiceChange() {
+      let sel = document.getElementById('returnInvoice');
+      let opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) {
+        document.getElementById('returnDetailBox').style.display = 'none';
+        document.getElementById('btnSubmitReturn').style.display = 'none';
+        return;
+      }
+      let sale = JSON.parse(opt.getAttribute('data-sale'));
+      document.getElementById('returnProductName').value = sale.productName;
+      let pricePerUnit = sale.qty > 0 ? sale.totalSales / sale.qty : 0;
+      document.getElementById('returnPricePerUnit').value = '฿' + pricePerUnit.toLocaleString(undefined, {maximumFractionDigits: 2});
+      document.getElementById('returnOrigQty').value = sale.qty;
+      document.getElementById('returnQty').value = sale.qty;
+      document.getElementById('returnQty').max = sale.qty;
+      document.getElementById('returnDetailBox').style.display = 'block';
+      document.getElementById('btnSubmitReturn').style.display = 'block';
+      calcReturnAmount();
+    }
+
+    function calcReturnAmount() {
+      let sel = document.getElementById('returnInvoice');
+      let opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+      let sale = JSON.parse(opt.getAttribute('data-sale'));
+      let returnQty = Number(document.getElementById('returnQty').value) || 0;
+      if (returnQty > sale.qty) {
+        document.getElementById('returnQty').value = sale.qty;
+        returnQty = sale.qty;
+      }
+      if (returnQty < 1) returnQty = 1;
+      let pricePerUnit = sale.qty > 0 ? sale.totalSales / sale.qty : 0;
+      let refundAmount = pricePerUnit * returnQty;
+      document.getElementById('returnRefundAmount').value = '฿' + refundAmount.toLocaleString(undefined, {maximumFractionDigits: 2});
+    }
+
+    function onReturnReasonChange() {
+      let val = document.getElementById('returnReasonSelect').value;
+      if (val === 'other') {
+        document.getElementById('returnReasonText').placeholder = 'กรุณาระบุเหตุผล...';
+        document.getElementById('returnReasonText').focus();
+      }
+    }
+
+    async function submitReturn(e) {
+      e.preventDefault();
+
+      let sel = document.getElementById('returnInvoice');
+      let opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) {
+        Swal.fire('เตือน', 'กรุณาเลือกบิลขายที่ต้องการเทิร์น', 'warning');
+        return;
+      }
+
+      let origSale = JSON.parse(opt.getAttribute('data-sale'));
+      let returnQty = Number(document.getElementById('returnQty').value);
+      let returnDate = document.getElementById('returnDate').value;
+
+      if (returnQty < 1 || returnQty > origSale.qty) {
+        Swal.fire('เตือน', `จำนวนเทิร์นต้องอยู่ระหว่าง 1 - ${origSale.qty}`, 'warning');
+        return;
+      }
+
+      let reasonSelect = document.getElementById('returnReasonSelect').value;
+      let reasonText = document.getElementById('returnReasonText').value;
+      let returnReason = reasonSelect === 'other' ? (reasonText || 'ไม่ระบุ') : reasonSelect;
+      if (reasonText && reasonSelect !== 'other') returnReason += ' - ' + reasonText;
+
+      let pricePerUnit = origSale.totalSales / origSale.qty;
+      let costPerUnit = origSale.totalCost / origSale.qty;
+      let profitPerUnit = origSale.profit / origSale.qty;
+
+      let returnTotal = -(pricePerUnit * returnQty);
+      let returnCost = -(costPerUnit * returnQty);
+      let returnProfit = -(profitPerUnit * returnQty);
+      let returnSubTotal = -(origSale.subTotal / origSale.qty * returnQty);
+      let returnVat = -(origSale.vat / origSale.qty * returnQty);
+
+      let returnReceiptId = 'RTN-' + Date.now();
+
+      const confirmResult = await Swal.fire({
+        title: 'ยืนยันเทิร์นสินค้า?',
+        html: `
+          <div class="text-start">
+            <p><strong>บิลอ้างอิง:</strong> ${origSale.receiptId}</p>
+            <p><strong>สินค้า:</strong> ${origSale.productName}</p>
+            <p><strong>จำนวนเทิร์น:</strong> <span class="text-danger fw-bold">${returnQty} เครื่อง</span></p>
+            <p><strong>ยอดคืนเงิน:</strong> <span class="text-danger fw-bold">฿${Math.abs(returnTotal).toLocaleString(undefined, {maximumFractionDigits: 2})}</span></p>
+            <p><strong>เหตุผล:</strong> ${returnReason}</p>
+            <hr>
+            <div class="alert alert-warning py-2 small">
+              <i class="fa-solid fa-triangle-exclamation"></i> สต็อกจะถูกเพิ่มกลับ ${returnQty} เครื่อง และยอดขาย/กำไรจะถูกหักออก
+            </div>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#7c3aed',
+        confirmButtonText: '<i class="fa-solid fa-rotate-left"></i> ยืนยันเทิร์น',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!confirmResult.isConfirmed) return;
+
+      Swal.showLoading();
+
+      try {
+        let returnData = {
+          invoice_id: returnReceiptId,
+          date: returnDate,
+          product_id: origSale.productId,
+          product_name: origSale.productName,
+          qty: -returnQty,
+          sub_total: returnSubTotal,
+          total_cost: returnCost,
+          profit: returnProfit,
+          shipping_cost: 0,
+          vat: returnVat,
+          grand_total: returnTotal,
+          cus_name: 'เทิร์น: ' + (origSale.cusName || '-') + ' [' + origSale.receiptId + ']',
+          address: 'เหตุผล: ' + returnReason,
+          deposit_amount: returnTotal,
+          deposit_remaining: 0,
+          payment_method: 'CASH',
+          status: 'RETURNED'
+        };
+
+        const { error: returnErr } = await supabaseClient.from('sales').insert([returnData]);
+        if (returnErr) throw returnErr;
+
+        const product = globalProducts.find(p => p.id === origSale.productId);
+        if (product) {
+          const { error: stockErr } = await supabaseClient.from('products')
+            .update({ stock: product.stock + returnQty })
+            .eq('id', origSale.productId);
+          if (stockErr) throw stockErr;
+        }
+
+        Swal.fire({
+          title: 'เทิร์นสำเร็จ!',
+          html: `<div>
+            <p>เทิร์น <strong>${origSale.productName}</strong> จำนวน ${returnQty} เครื่อง</p>
+            <p>คืนเงิน: <span class="text-danger fw-bold">฿${Math.abs(returnTotal).toLocaleString()}</span></p>
+            <p>สต็อกเพิ่มกลับ: <span class="text-success fw-bold">+${returnQty}</span></p>
+            <p class="small text-muted">เลขที่เทิร์น: ${returnReceiptId}</p>
+          </div>`,
+          icon: 'success'
+        });
+
+        document.getElementById('formReturn').reset();
+        document.getElementById('returnDetailBox').style.display = 'none';
+        document.getElementById('btnSubmitReturn').style.display = 'none';
+        refreshAllData();
+
+        let lineMsg = `🔄 [เทิร์นสินค้า]\n` +
+          `เลขที่: ${returnReceiptId}\n` +
+          `อ้างอิงบิล: ${origSale.receiptId}\n` +
+          `สินค้า: ${origSale.productName}\n` +
+          `จำนวน: ${returnQty} เครื่อง\n` +
+          `ยอดคืนเงิน: ฿${Math.abs(returnTotal).toLocaleString()}\n` +
+          `กำไรที่หัก: ฿${Math.abs(returnProfit).toLocaleString()}\n` +
+          `เหตุผล: ${returnReason}\n` +
+          `ลูกค้า: ${origSale.cusName}`;
+        sendLineNotify(lineMsg);
+
+      } catch (error) {
+        console.error(error);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการเทิร์นได้: ' + (error.message || ''), 'error');
+      }
+    }
+
+    async function quickReturn(receiptId) {
+      let sale = globalSales.find(s => s.receiptId === receiptId);
+      if (!sale) {
+        Swal.fire('เตือน', 'ไม่พบรายการขายนี้', 'warning');
+        return;
+      }
+
+      const { value: formValues } = await Swal.fire({
+        title: '<i class="fa-solid fa-rotate-left" style="color:#7c3aed"></i> เทิร์นสินค้า',
+        html: `
+          <div class="text-start">
+            <p><strong>บิล:</strong> ${sale.receiptId}</p>
+            <p><strong>สินค้า:</strong> ${sale.productName}</p>
+            <p><strong>จำนวนที่ขาย:</strong> ${sale.qty} เครื่อง</p>
+            <p><strong>ยอดรวม:</strong> ฿${Number(sale.totalSales).toLocaleString()}</p>
+            <hr>
+            <label class="fw-bold small">จำนวนที่ต้องการเทิร์น:</label>
+            <input id="swal_returnQty" class="swal2-input" type="number" value="${sale.qty}" min="1" max="${sale.qty}">
+            <label class="fw-bold small mt-2">เหตุผลการเทิร์น:</label>
+            <select id="swal_returnReason" class="swal2-select">
+              <option value="สินค้ามีปัญหา/ชำรุด">สินค้ามีปัญหา/ชำรุด</option>
+              <option value="ลูกค้าเปลี่ยนใจ">ลูกค้าเปลี่ยนใจ</option>
+              <option value="สินค้าไม่ตรงตามสั่ง">สินค้าไม่ตรงตามสั่ง</option>
+              <option value="เปลี่ยนรุ่น/อัพเกรด">เปลี่ยนรุ่น/อัพเกรด</option>
+            </select>
+            <label class="fw-bold small mt-2">รายละเอียดเพิ่มเติม:</label>
+            <input id="swal_returnNote" class="swal2-input" placeholder="ระบุรายละเอียด (ถ้ามี)">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#7c3aed',
+        confirmButtonText: '<i class="fa-solid fa-rotate-left"></i> ยืนยันเทิร์น',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => ({
+          qty: Number(document.getElementById('swal_returnQty').value),
+          reason: document.getElementById('swal_returnReason').value,
+          note: document.getElementById('swal_returnNote').value
+        })
+      });
+
+      if (!formValues) return;
+      if (formValues.qty < 1 || formValues.qty > sale.qty) {
+        Swal.fire('เตือน', `จำนวนเทิร์นต้องอยู่ระหว่าง 1 - ${sale.qty}`, 'warning');
+        return;
+      }
+
+      let returnReason = formValues.reason;
+      if (formValues.note) returnReason += ' - ' + formValues.note;
+
+      let returnQty = formValues.qty;
+      let pricePerUnit = sale.totalSales / sale.qty;
+      let costPerUnit = sale.totalCost / sale.qty;
+      let profitPerUnit = sale.profit / sale.qty;
+
+      let returnTotal = -(pricePerUnit * returnQty);
+      let returnCost = -(costPerUnit * returnQty);
+      let returnProfit = -(profitPerUnit * returnQty);
+      let returnSubTotal = -(sale.subTotal / sale.qty * returnQty);
+      let returnVat = -(sale.vat / sale.qty * returnQty);
+
+      let returnReceiptId = 'RTN-' + Date.now();
+
+      Swal.showLoading();
+      try {
+        let returnData = {
+          invoice_id: returnReceiptId,
+          date: new Date().toISOString().split('T')[0],
+          product_id: sale.productId,
+          product_name: sale.productName,
+          qty: -returnQty,
+          sub_total: returnSubTotal,
+          total_cost: returnCost,
+          profit: returnProfit,
+          shipping_cost: 0,
+          vat: returnVat,
+          grand_total: returnTotal,
+          cus_name: 'เทิร์น: ' + (sale.cusName || '-') + ' [' + sale.receiptId + ']',
+          address: 'เหตุผล: ' + returnReason,
+          deposit_amount: returnTotal,
+          deposit_remaining: 0,
+          payment_method: 'CASH',
+          status: 'RETURNED'
+        };
+
+        const { error: returnErr } = await supabaseClient.from('sales').insert([returnData]);
+        if (returnErr) throw returnErr;
+
+        const product = globalProducts.find(p => p.id === sale.productId);
+        if (product) {
+          const { error: stockErr } = await supabaseClient.from('products')
+            .update({ stock: product.stock + returnQty })
+            .eq('id', sale.productId);
+          if (stockErr) throw stockErr;
+        }
+
+        Swal.fire('เทิร์นสำเร็จ!', `คืนสต็อก +${returnQty} และหักยอดขาย ฿${Math.abs(returnTotal).toLocaleString()} เรียบร้อย`, 'success');
+        refreshAllData();
+
+        let lineMsg = `🔄 [เทิร์นสินค้า]\n` +
+          `เลขที่: ${returnReceiptId}\n` +
+          `อ้างอิงบิล: ${sale.receiptId}\n` +
+          `สินค้า: ${sale.productName}\n` +
+          `จำนวน: ${returnQty} เครื่อง\n` +
+          `ยอดคืนเงิน: ฿${Math.abs(returnTotal).toLocaleString()}\n` +
+          `เหตุผล: ${returnReason}`;
+        sendLineNotify(lineMsg);
+
+      } catch (error) {
+        console.error(error);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกการเทิร์นได้', 'error');
+      }
+    }
     function renderReportsTab() {
       let filter = document.getElementById('monthFilter').value;
       let targetMonth = filter.split('-')[1] + "/" + filter.split('-')[0];
@@ -2682,7 +3220,11 @@
               depositCol = `<span class="badge bg-success"><i class="fa-solid fa-check-circle"></i> COD สำเร็จ</span>`;
               remainCol = `<span class="text-success">฿0</span>`;
             }
-          } else {
+            } else if (s.status === 'RETURNED') {
+              trClass = 'table-return';
+              depositCol = '<span class="badge badge-return"><i class="fa-solid fa-rotate-left"></i> เทิร์น</span><br><small class="text-purple">' + (s.address || '') + '</small>';
+              remainCol = '<span class="text-purple">-</span>';
+            } else {
             // DEPOSIT OR CASH
             let isDepositSale = s.paymentMethod === 'DEPOSIT' && s.depositRemaining > 0;
             if (isDepositSale) {
@@ -2721,6 +3263,7 @@
                  <div class="btn-group mt-1">
                    <button class="btn btn-sm btn-outline-warning" onclick="editSaleModal(JSON.parse(decodeURIComponent('${saleStr}')))" title="แก้ไขข้อมูล"><i class="fa-solid fa-pen"></i> แก้ไข</button>
                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSale('${s.receiptId}','${s.productId}',${s.qty})" title="ลบรายการนี้"><i class="fa-solid fa-trash"></i> ลบ</button>
+                    <button class="btn btn-sm btn-outline-purple" onclick="quickReturn('${s.receiptId}')" title="เทิร์นสินค้า"><i class="fa-solid fa-rotate-left"></i> เทิร์น</button>
                  </div>
               </td>
            </tr>`;
@@ -3981,7 +4524,7 @@
                     <div class="stat-card bg-white px-3 py-4 border-start border-secondary border-4 shadow-sm h-100">
                       <h6 class="small">${acc.bank}</h6>
                       <p class="small text-muted m-0 mb-1"><i class="fa-solid fa-credit-card me-1"></i>${acc.accountNo}</p>
-                      <h4 class="text-dark fw-bold m-0">เธฟ${acc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
+                      <h4 class="text-dark fw-bold m-0">฿${acc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
                       <i class="fa-solid fa-building-columns bg-icon" style="opacity: 0.05;"></i>
                     </div>
                   </div>`;
@@ -4272,5 +4815,3 @@
   </script>
 </body>
 </html>
-
-
