@@ -1810,7 +1810,7 @@
                 <option value="ใบเสนอราคา / QUOTATION">ใบเสนอราคา (มี VAT)</option>
                 <option value="ใบเสนอราคา / QUOTATION NO VAT">ใบเสนอราคา (ไม่มี VAT)</option>
                 <option value="ใบกำกับภาษี / TAX INVOICE">ใบกำกับภาษี (มี VAT)</option>
-                <option value="บิลเงินสด / CASH RECEIPT">บิลธรรมดา / เงินสด (ไม่มี VAT)</option>
+                <option value="บิลเงินสด / ใบเสร็จรับเงิน">บิลเงินสด / ใบเสร็จรับเงิน (ไม่มี VAT)</option>
               </select></div>
             <div class="col-md-3"><label class="small fw-bold">เลขที่เอกสาร</label><input type="text" id="qtDocId"
                 class="form-control form-control-sm" placeholder="เช่น INV2026001"></div>
@@ -5655,7 +5655,7 @@ async function submitSale(e) {
       });
 
       let docType = document.getElementById('qtDocType').value;
-      let isNoVat = docType.includes('CASH RECEIPT') || docType.includes('NO VAT');
+      let isNoVat = docType.includes('CASH RECEIPT') || docType.includes('ใบเสร็จรับเงิน') || docType.includes('บิลเงินสด') || docType.includes('NO VAT');
       let grandTotal = subTotal;
       let vatBase, vat;
       if (isNoVat) {
@@ -5697,14 +5697,14 @@ async function submitSale(e) {
 
       // สร้าง HTML สำหรับทุกบิล
       let batchHtml = '';
-      let docType = 'บิลเงินสด / CASH RECEIPT';
+      let docType = 'บิลเงินสด / ใบเสร็จรับเงิน';
       let today = new Date();
       let printDate = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
 
       selectedSales.forEach((sale, idx) => {
         let unitPrice = sale.qty > 0 ? sale.subTotal / sale.qty : 0;
         let subTotal = sale.subTotal;
-        let isNoVat = true; // default batch print as CASH RECEIPT (no VAT)
+        let isNoVat = true; // default batch print as no VAT
         let vatBase = subTotal;
         let vat = 0;
         let grandTotal = subTotal;
