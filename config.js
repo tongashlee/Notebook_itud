@@ -15,3 +15,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // LINE Messaging API - Google Apps Script Web App URL
 // นำ URL ของ Web App ที่ได้จาก Google Apps Script มาใส่ที่นี่ เพื่อเปิดใช้งานการแจ้งเตือน
 const LINE_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwDGtnieANYZ8ZoKr6g5RsuaIs04a5GgMw__4TI2-j2ph6HiQuCXOxo0J92gu4h7PDpJA/exec';
+
+// Telegram Notification Configuration (ฟรี ไม่จำกัดข้อความ)
+// นำ Token จาก @BotFather และ Chat ID มาใส่ที่นี่ หรือตั้งค่าผ่านหน้าเว็บได้เลย
+const TELEGRAM_BOT_TOKEN = '8954759154:AAGOmct3yfHml-Ui_ehoUi9Pe1PQSp_BhcY'; // Bot: NotebbokitUdon_bot
+const TELEGRAM_CHAT_ID = '6971463700';   // Chat ID: Nattapong Pongsart

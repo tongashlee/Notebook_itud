@@ -949,6 +949,7 @@
       <li onclick="showPage('income-expense', this)"><i class="fa-solid fa-wallet"></i> รายรับ-รายจ่าย (เพื่อภาษี)</li>
       <li onclick="showPage('savings', this)"><i class="fa-solid fa-piggy-bank"></i> เงินฝาก (ออมทรัพย์)</li>
       <li onclick="showPage('disbursement', this)"><i class="fa-solid fa-hand-holding-dollar"></i> ตั้งเบิกเงินบริษัท</li>
+      <li onclick="openNotifyConfigModal()" style="border-top: 1px dashed rgba(255,255,255,0.2); margin-top: 10px; padding-top: 12px;"><i class="fa-solid fa-bell text-warning"></i> ตั้งค่าแจ้งเตือน (LINE/Telegram)</li>
     </ul>
   </div>
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
@@ -982,6 +983,9 @@
         </button>
         <button id="btnClearDateSearch" class="btn btn-sm btn-outline-secondary shadow-sm" onclick="clearDateSearch()" title="ล้างการค้นหาวันที่">
           <i class="fa-solid fa-rotate-left me-1"></i> ล้าง
+        </button>
+        <button class="btn btn-sm btn-outline-primary shadow-sm ms-1 fw-bold" onclick="openNotifyConfigModal()" title="ตั้งค่าระบบแจ้งเตือน LINE & Telegram">
+          <i class="fa-solid fa-bell text-warning me-1"></i> แจ้งเตือน
         </button>
         <button class="btn btn-sm btn-outline-danger ms-2" onclick="logout()">
           <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
@@ -2692,6 +2696,154 @@
     </div>
   </div>
 
+  <!-- Modal: ตั้งค่าระบบแจ้งเตือน (Telegram & LINE) -->
+  <div class="modal fade" id="modalNotifyConfig" tabindex="-1" aria-labelledby="modalNotifyConfigLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header bg-dark-blue text-white py-3 px-4">
+          <h5 class="modal-title fw-bold" id="modalNotifyConfigLabel">
+            <i class="fa-solid fa-bell text-warning me-2"></i>ตั้งค่าระบบแจ้งเตือน (Telegram & LINE)
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 bg-light">
+
+          <!-- แท็บสลับ Telegram / LINE -->
+          <ul class="nav nav-pills nav-fill mb-3 bg-white p-2 rounded-3 shadow-sm border" id="notifyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-bold py-2" id="tab-telegram" data-bs-toggle="pill" data-bs-target="#content-telegram" type="button" role="tab">
+                <i class="fa-brands fa-telegram text-primary fs-5 me-1 align-middle"></i> Telegram <span class="badge bg-success ms-1 small">แนะนำ • ฟรี 100%</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-bold py-2" id="tab-line" data-bs-toggle="pill" data-bs-target="#content-line" type="button" role="tab">
+                <i class="fa-brands fa-line text-success fs-5 me-1 align-middle"></i> LINE Messaging API
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="notifyTabsContent">
+
+            <!-- 1. Telegram Tab -->
+            <div class="tab-pane fade show active" id="content-telegram" role="tabpanel">
+              <div class="card p-3 border-0 shadow-sm rounded-3 bg-white mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                  <div>
+                    <h6 class="fw-bold mb-0 text-dark-blue"><i class="fa-brands fa-telegram text-primary me-2"></i>ระบบแจ้งเตือนผ่าน Telegram Bot</h6>
+                    <small class="text-muted">ฟรี 100% ตลอดชีพ ไม่จำกัดจำนวนครั้ง ส่งไวถึงมือถือและคอมพิวเตอร์ทันที</small>
+                  </div>
+                  <div class="form-check form-switch fs-5 mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="switchTelegramEnabled" checked>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold text-dark-blue small">Telegram Bot Token:</label>
+                  <div class="input-group">
+                    <input type="password" id="inputTelegramBotToken" class="form-control font-monospace" placeholder="เช่น 7812345678:AAHxXXXXXXXXXXXXX">
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('inputTelegramBotToken', 'iconToggleTgToken')">
+                      <i class="fa-solid fa-eye" id="iconToggleTgToken"></i>
+                    </button>
+                  </div>
+                  <div class="form-text small">รับ Token ได้ฟรีทันทีจากบอททางการของ Telegram คือ <strong>@BotFather</strong></div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold text-dark-blue small">Telegram Chat ID (กลุ่ม หรือ แชทส่วนตัว):</label>
+                  <div class="input-group">
+                    <input type="text" id="inputTelegramChatId" class="form-control font-monospace" placeholder="เช่น -1001234567890 (รหัสกลุ่ม) หรือ 123456789 (ส่วนตัว)">
+                    <button class="btn btn-outline-primary fw-bold" type="button" id="btnAutoFetchChatId" onclick="fetchTelegramChatId()">
+                      <i class="fa-solid fa-magnifying-glass me-1"></i> ดึง Chat ID ล่าสุดอัตโนมัติ
+                    </button>
+                  </div>
+                  <div class="form-text small">รหัสกลุ่มมักจะขึ้นต้นด้วยเครื่องหมายลบ เช่น <code>-100...</code> หรือกดปุ่มค้นหาอัตโนมัติ</div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3 pt-2 border-top justify-content-end">
+                  <button type="button" class="btn btn-outline-primary btn-sm fw-bold px-3 shadow-sm" onclick="testTelegramNotify()">
+                    <i class="fa-solid fa-paper-plane me-1"></i> ทดสอบส่ง Telegram ทันที
+                  </button>
+                </div>
+              </div>
+
+              <!-- คำแนะนำการตั้งค่า Telegram สั้นๆ -->
+              <div class="accordion" id="accordionTgHelp">
+                <div class="accordion-item border-0 shadow-sm rounded-3 overflow-hidden">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-white py-2 small fw-bold text-muted" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTgHelp">
+                      <i class="fa-solid fa-circle-question text-info me-2"></i> วิธีสร้าง Telegram Bot และดึงเข้ากลุ่ม (3 ขั้นตอนง่ายๆ ใน 1 นาที)
+                    </button>
+                  </h2>
+                  <div id="collapseTgHelp" class="accordion-collapse collapse" data-bs-parent="#accordionTgHelp">
+                    <div class="accordion-body small bg-light text-dark-blue">
+                      <ol class="mb-0 ps-3">
+                        <li class="mb-2"><strong>สร้างบอท:</strong> เปิดแอป Telegram แล้วค้นหา <code>@BotFather</code> จากนั้นส่งข้อความ <code>/newbot</code> -> ตั้งชื่อบอท -> ตั้ง Username บอท (ลงท้ายด้วย bot) แล้วคัดลอก <strong>HTTP API Token</strong> มาวางในช่องด้านบน</li>
+                        <li class="mb-2"><strong>ดึงบอทเข้ากลุ่มร้าน:</strong> สร้างกลุ่มใน Telegram แล้วดึงบอทที่เราเพิ่งสร้างเข้ากลุ่ม จากนั้นส่งข้อความอะไรก็ได้ในกลุ่ม 1 ข้อความ (เช่น พิมพ์ว่า <code>สวัสดี</code>)</li>
+                        <li><strong>รับ Chat ID:</strong> กลับมากดปุ่ม <strong>"ดึง Chat ID ล่าสุดอัตโนมัติ"</strong> ในหน้านี้ ระบบจะดึงรหัสกลุ่มมาใส่ให้ทันที แล้วกด <strong>"ทดสอบส่ง"</strong> เพื่อรับข้อความแจ้งเตือนแรกได้เลยครับ!</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. LINE Tab -->
+            <div class="tab-pane fade" id="content-line" role="tabpanel">
+              <div class="card p-3 border-0 shadow-sm rounded-3 bg-white mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                  <div>
+                    <h6 class="fw-bold mb-0 text-dark-blue"><i class="fa-brands fa-line text-success me-2"></i>ระบบแจ้งเตือนผ่าน LINE</h6>
+                    <small class="text-muted">ส่งเข้ากลุ่ม LINE ผ่าน Webhook ของ Google Apps Script</small>
+                  </div>
+                  <div class="form-check form-switch fs-5 mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="switchLineEnabled" checked>
+                  </div>
+                </div>
+
+                <!-- แจ้งเตือนสาเหตุที่ LINE ไม่ส่ง -->
+                <div class="alert alert-warning border-0 shadow-sm rounded-3 p-3 mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="fa-solid fa-triangle-exclamation text-danger fs-4 me-3 mt-1"></i>
+                    <div>
+                      <h6 class="fw-bold mb-1 text-danger">สถานะล่าสุด: โควต้าส่งฟรีของ LINE ประจำเดือนนี้เต็ม (429)</h6>
+                      <p class="small mb-0 text-muted">
+                        บัญชี LINE Official Account (LINE OA) แบบฟรีมีโควต้า <strong>200 ข้อความ/เดือน</strong> หากส่งครบแล้ว ทาง LINE จะบล็อกข้อความทั้งหมดจนกว่าจะถึง <strong>วันที่ 1 ของเดือนถัดไป</strong> (ระบบจะรีเซ็ตอัตโนมัติ) หรืออัปเกรดเป็นแพ็กเกจเสียเงินของ LINE<br>
+                        👉 <strong>แนะนำ:</strong> ให้เปิดใช้งาน <strong>Telegram</strong> ควบคู่กันไว้ เพราะส่งฟรีไม่จำกัดจำนวนครั้งครับ
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold text-dark-blue small">LINE Webhook URL (Google Apps Script):</label>
+                  <input type="text" id="inputLineWebhookUrl" class="form-control font-monospace" placeholder="https://script.google.com/macros/s/.../exec">
+                  <div class="form-text small">URL ของ Google Apps Script Web App ที่ใช้ส่งต่อข้อความเข้า LINE Messaging API</div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3 pt-2 border-top justify-content-end">
+                  <button type="button" class="btn btn-outline-success btn-sm fw-bold px-3 shadow-sm" onclick="testLineNotify()">
+                    <i class="fa-brands fa-line me-1"></i> ทดสอบส่ง LINE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <div class="modal-footer bg-white rounded-bottom-4 py-2 px-4 justify-content-between">
+          <span class="small text-muted"><i class="fa-solid fa-shield-halved text-success me-1"></i> ข้อมูลบันทึกปลอดภัยในเบราว์เซอร์ของคุณ</span>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">ปิด</button>
+            <button type="button" class="btn btn-custom-orange btn-sm px-4 fw-bold shadow-sm" onclick="saveNotifyConfig()">
+              <i class="fa-solid fa-floppy-disk me-1"></i> บันทึกการตั้งค่า
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: สร้าง/แก้ไข รายการขอตั้งเบิกเงิน -->
   <div class="modal fade" id="modalDisbursement" tabindex="-1" aria-labelledby="modalDisbursementLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -3660,24 +3812,97 @@ CREATE POLICY "Allow all operations for anon" ON disbursements FOR ALL USING (tr
     let mySalesChart = null;
     let myProfitChart = null;
 
-    // ====== ฟังก์ชันแจ้งเตือนผ่าน LINE ======
+    // ====== Notification Constants & Keys ======
+    const NOTIFY_STORAGE_KEY_TG_TOKEN = 'NOTIFY_TELEGRAM_BOT_TOKEN';
+    const NOTIFY_STORAGE_KEY_TG_CHAT = 'NOTIFY_TELEGRAM_CHAT_ID';
+    const NOTIFY_STORAGE_KEY_TG_ENABLED = 'NOTIFY_TELEGRAM_ENABLED';
+    const NOTIFY_STORAGE_KEY_LINE_URL = 'NOTIFY_LINE_WEBHOOK_URL';
+    const NOTIFY_STORAGE_KEY_LINE_ENABLED = 'NOTIFY_LINE_ENABLED';
+
+    // Helper: ดึงการตั้งค่า Telegram
+    function getTelegramConfig() {
+      const storedToken = (localStorage.getItem(NOTIFY_STORAGE_KEY_TG_TOKEN) || '').trim();
+      const storedChatId = (localStorage.getItem(NOTIFY_STORAGE_KEY_TG_CHAT) || '').trim();
+      const token = storedToken || (typeof TELEGRAM_BOT_TOKEN !== 'undefined' ? TELEGRAM_BOT_TOKEN : '');
+      const chatId = storedChatId || (typeof TELEGRAM_CHAT_ID !== 'undefined' ? TELEGRAM_CHAT_ID : '');
+      const enabled = localStorage.getItem(NOTIFY_STORAGE_KEY_TG_ENABLED) !== 'false';
+      return { token: (token || '').trim(), chatId: (chatId || '').trim(), enabled };
+    }
+
+    // Helper: ดึงการตั้งค่า LINE
+    function getLineConfig() {
+      const storedUrl = (localStorage.getItem(NOTIFY_STORAGE_KEY_LINE_URL) || '').trim();
+      const url = storedUrl || (typeof LINE_WEBHOOK_URL !== 'undefined' ? LINE_WEBHOOK_URL : '');
+      const enabled = localStorage.getItem(NOTIFY_STORAGE_KEY_LINE_ENABLED) !== 'false';
+      return { url: (url || '').trim(), enabled };
+    }
+
+    // ====== ฟังก์ชันแจ้งเตือนผ่าน Telegram ======
+    async function sendTelegramNotify(message) {
+      try {
+        const tg = getTelegramConfig();
+        if (!tg.enabled) {
+          console.log('Telegram Notify ปิดใช้งานอยู่');
+          return { success: false, reason: 'disabled' };
+        }
+        if (!tg.token || !tg.chatId) {
+          console.warn('Telegram Bot Token หรือ Chat ID ไม่ได้ตั้งค่า - ข้ามการแจ้งเตือน Telegram');
+          return { success: false, reason: 'unconfigured' };
+        }
+
+        const res = await fetch(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tg.chatId,
+            text: message
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          console.log('Telegram Notify sent successfully');
+          return { success: true, data };
+        } else {
+          console.error('Telegram API error:', data);
+          return { success: false, error: data.description };
+        }
+      } catch (err) {
+        console.error('Telegram fetch error:', err);
+        return { success: false, error: err.message };
+      }
+    }
+
+    // ====== ฟังก์ชันแจ้งเตือนระบบ (ส่งทั้ง Telegram และ LINE) ======
     async function sendLineNotify(message) {
-      if (typeof LINE_WEBHOOK_URL === 'undefined' || !LINE_WEBHOOK_URL) {
+      // 1. ส่งแจ้งเตือนผ่าน Telegram เสมอ (ถ้ามีการตั้งค่าไว้)
+      sendTelegramNotify(message).catch(e => console.warn('Telegram notify error:', e));
+
+      // 2. ส่งแจ้งเตือนผ่าน LINE
+      const line = getLineConfig();
+      if (!line.enabled) {
+        console.log('LINE Notify ปิดใช้งานอยู่');
+        return;
+      }
+      if (!line.url) {
         console.warn('LINE_WEBHOOK_URL ไม่ได้ตั้งค่า - ข้ามการแจ้งเตือน LINE');
         return;
       }
       try {
-        await fetch(LINE_WEBHOOK_URL, {
+        await fetch(line.url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: message }),
           mode: 'no-cors'
         });
-        console.log('LINE Notify sent successfully');
+        console.log('LINE Notify dispatched');
       } catch (err) {
         console.error('LINE Notify error:', err);
       }
     }
+
+    // Alias สำหรับการเรียกแจ้งเตือนระบบ
+    const sendSystemNotification = sendLineNotify;
 
     // Helper: แปลงวันที่ YYYY-MM-DD เป็น DD/MM/YYYY (สำหรับแสดงผล)
     function formatDateToTH(dateString) {
@@ -8985,6 +9210,276 @@ async function submitSale(e) {
         } else {
           label.innerHTML = 'ตั้งค่า Gemini Key';
         }
+      }
+    }
+
+    // ====== Notification Modal & Management UI ======
+    function openNotifyConfigModal() {
+      const tg = getTelegramConfig();
+      const line = getLineConfig();
+
+      const tgTokenEl = document.getElementById('inputTelegramBotToken');
+      const tgChatEl = document.getElementById('inputTelegramChatId');
+      const tgSwitchEl = document.getElementById('switchTelegramEnabled');
+
+      const lineUrlEl = document.getElementById('inputLineWebhookUrl');
+      const lineSwitchEl = document.getElementById('switchLineEnabled');
+
+      if (tgTokenEl) tgTokenEl.value = tg.token;
+      if (tgChatEl) tgChatEl.value = tg.chatId;
+      if (tgSwitchEl) tgSwitchEl.checked = tg.enabled;
+
+      if (lineUrlEl) lineUrlEl.value = line.url;
+      if (lineSwitchEl) lineSwitchEl.checked = line.enabled;
+
+      const modalEl = document.getElementById('modalNotifyConfig');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    }
+
+    function saveNotifyConfig() {
+      const tgToken = (document.getElementById('inputTelegramBotToken')?.value || '').trim();
+      const tgChatId = (document.getElementById('inputTelegramChatId')?.value || '').trim();
+      const tgEnabled = document.getElementById('switchTelegramEnabled')?.checked ?? true;
+
+      const lineUrl = (document.getElementById('inputLineWebhookUrl')?.value || '').trim();
+      const lineEnabled = document.getElementById('switchLineEnabled')?.checked ?? true;
+
+      localStorage.setItem(NOTIFY_STORAGE_KEY_TG_TOKEN, tgToken);
+      localStorage.setItem(NOTIFY_STORAGE_KEY_TG_CHAT, tgChatId);
+      localStorage.setItem(NOTIFY_STORAGE_KEY_TG_ENABLED, String(tgEnabled));
+
+      localStorage.setItem(NOTIFY_STORAGE_KEY_LINE_URL, lineUrl);
+      localStorage.setItem(NOTIFY_STORAGE_KEY_LINE_ENABLED, String(lineEnabled));
+
+      const modalEl = document.getElementById('modalNotifyConfig');
+      if (modalEl) {
+        bootstrap.Modal.getInstance(modalEl)?.hide();
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'บันทึกการตั้งค่าแล้ว',
+        text: 'ระบบอัปเดตการตั้งค่าการแจ้งเตือน Telegram & LINE เรียบร้อยแล้วครับ',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        if (icon) icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    async function fetchTelegramChatId() {
+      const token = (document.getElementById('inputTelegramBotToken')?.value || '').trim();
+      if (!token) {
+        Swal.fire('กรุณากรอก Bot Token', 'กรุณากรอก Telegram Bot Token ที่ได้จาก @BotFather ก่อนกดค้นหา', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnAutoFetchChatId');
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> กำลังค้นหา...';
+      }
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.description || 'ไม่สามารถติดต่อ Telegram Bot API ได้');
+        }
+
+        const updates = data.result || [];
+        const chatsMap = new Map();
+        updates.forEach(u => {
+          const msg = u.message || u.channel_post || u.my_chat_member;
+          if (msg && msg.chat) {
+            chatsMap.set(msg.chat.id, msg.chat);
+          }
+        });
+
+        const chats = Array.from(chatsMap.values());
+
+        if (chats.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'ยังไม่พบข้อความจากกลุ่มหรือแชท',
+            html: `
+              <p class="small text-muted mb-2">Telegram API ยังไม่มีประวัติข้อความใหม่ที่บอทได้รับ กรุณาทำตามนี้ครับ:</p>
+              <ol class="small text-start ps-3 mb-0">
+                <li class="mb-1">เปิด Telegram ดึงบอทเข้ากลุ่มที่ต้องการ</li>
+                <li class="mb-1">พิมพ์ข้อความอะไรก็ได้ในกลุ่ม 1 ข้อความ เช่น <code>สวัสดี</code></li>
+                <li class="mb-1">(กรณีแชทส่วนตัว: เปิดแชทกับบอทแล้วกดปุ่ม <strong>Start</strong>)</li>
+                <li>แล้วกลับมากดปุ่มนี้ใหม่อีกครั้งครับ</li>
+              </ol>
+            `
+          });
+          return;
+        }
+
+        if (chats.length === 1) {
+          const c = chats[0];
+          document.getElementById('inputTelegramChatId').value = c.id;
+          Swal.fire({
+            icon: 'success',
+            title: 'พบ Chat ID แล้ว!',
+            text: `ดึง Chat ID: ${c.id} (${c.title || c.first_name || 'แชท'}) ใส่ในช่องให้เรียบร้อยแล้ว อย่าลืมกดบันทึกนะครับ`,
+            timer: 3000,
+            showConfirmButton: false
+          });
+        } else {
+          let optionsHtml = chats.map(c => `
+            <div class="p-2 border rounded-3 mb-2 d-flex justify-content-between align-items-center bg-white shadow-sm">
+              <div class="text-truncate me-2">
+                <div class="fw-bold">${c.title || (c.first_name + ' ' + (c.last_name || ''))}</div>
+                <div class="small text-muted font-monospace">${c.id} <span class="badge bg-secondary ms-1">${c.type}</span></div>
+              </div>
+              <button class="btn btn-sm btn-primary py-1 px-3 flex-shrink-0" onclick="selectTelegramChatId('${c.id}')">เลือก</button>
+            </div>
+          `).join('');
+
+          Swal.fire({
+            title: 'เลือกห้องแชทที่ต้องการรับการแจ้งเตือน',
+            html: `<div class="text-start mt-3" style="max-height: 260px; overflow-y: auto;">${optionsHtml}</div>`,
+            showConfirmButton: false,
+            showCloseButton: true
+          });
+        }
+
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถดึงข้อมูลได้ โปรดตรวจสอบ Bot Token', 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    }
+
+    function selectTelegramChatId(chatId) {
+      document.getElementById('inputTelegramChatId').value = chatId;
+      Swal.close();
+      Swal.fire({
+        icon: 'success',
+        title: 'ใส่ Chat ID เรียบร้อย',
+        text: `เลือก Chat ID: ${chatId} แล้ว (อย่าลืมกดบันทึกการตั้งค่า)`,
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+
+    async function testTelegramNotify() {
+      const token = (document.getElementById('inputTelegramBotToken')?.value || '').trim();
+      const chatId = (document.getElementById('inputTelegramChatId')?.value || '').trim();
+
+      if (!token || !chatId) {
+        Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกทั้ง Telegram Bot Token และ Chat ID ก่อนกดทดสอบ', 'warning');
+        return;
+      }
+
+      Swal.fire({
+        title: 'กำลังส่งข้อความทดสอบ...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        const testMsg = `🔔 <b>ทดสอบระบบแจ้งเตือน Telegram</b>\n` +
+          `🏢 หจก. โน๊ตบุ๊ค ไอทีอุดร\n` +
+          `⏱ เวลา: ${new Date().toLocaleString('th-TH')}\n` +
+          `✅ เชื่อมต่อระบบแจ้งเตือนสำเร็จเรียบร้อย! ระบบพร้อมส่งแจ้งเตือนการขาย, คืน/เทิร์น, คลังสินค้า และเบิกเงินแล้ว 🚀`;
+
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: testMsg,
+            parse_mode: 'HTML'
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'ส่ง Telegram สำเร็จ! 🎉',
+            text: 'ระบบส่งข้อความเข้าแอป Telegram เรียบร้อยแล้ว กรุณาเปิดดูในห้องแชทของคุณ'
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ส่งไม่สำเร็จ',
+            text: 'Telegram ตอบกลับว่า: ' + (data.description || 'เกิดข้อผิดพลาด')
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ข้อผิดพลาดเครือข่าย',
+          text: err.message || 'ไม่สามารถติดต่อ api.telegram.org ได้'
+        });
+      }
+    }
+
+    async function testLineNotify() {
+      const url = (document.getElementById('inputLineWebhookUrl')?.value || '').trim();
+      if (!url) {
+        Swal.fire('ยังไม่ได้กรอก URL', 'กรุณากรอก LINE Webhook URL ก่อนทดสอบ', 'warning');
+        return;
+      }
+
+      Swal.fire({
+        title: 'กำลังทดสอบส่ง LINE...',
+        text: 'ระบบกำลังส่งสัญญาณไปยัง Google Apps Script Webhook',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        const testMsg = `🔔 [ทดสอบแจ้งเตือน LINE]\nระบบจัดการร้าน โน๊ตบุ๊ค ไอทีอุดร\nเวลา: ${new Date().toLocaleString('th-TH')}`;
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: testMsg }),
+          mode: 'no-cors'
+        });
+
+        Swal.fire({
+          icon: 'info',
+          title: 'ส่งคำขอไปที่ Webhook แล้ว',
+          html: `
+            <p class="small text-muted mb-2">ส่งสัญญาณไปยัง Google Apps Script เรียบร้อยแล้ว</p>
+            <div class="alert alert-warning small text-start mb-0">
+              <strong>⚠️ หมายเหตุสถานะโควต้า LINE:</strong><br>
+              หากไม่มีข้อความเด้งในกลุ่ม LINE แสดงว่า <strong>โควต้าส่งฟรี 200 ข้อความ/เดือนของ LINE OA เต็มแล้ว (429)</strong> ซึ่งจะกลับมาส่งได้ปกติในวันที่ 1 ของเดือนถัดไป แนะนำให้เปิดใช้ Telegram เป็นระบบหลักควบคู่กันได้เลยครับ
+            </div>
+          `
+        });
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: err.message || 'ไม่สามารถส่งคำขอไปยัง Webhook ได้'
+        });
       }
     }
 
